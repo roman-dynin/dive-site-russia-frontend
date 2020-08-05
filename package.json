@@ -1,0 +1,16 @@
+{
+    "name": "dive-site-russia",
+    "scripts": {
+        "dev": "nuxt",
+        "build": "nuxt build",
+        "start": "nuxt start"
+    },
+    "dependencies": {
+        "leaflet": "^1.6.0",
+        "nuxt": "^2.14.1",
+        "vue2-leaflet": "^2.5.2"
+    },
+    "devDependencies": {
+        "@nuxtjs/vuetify": "^1.11.2"
+    }
+}
