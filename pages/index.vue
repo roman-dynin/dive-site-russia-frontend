@@ -165,12 +165,8 @@ export default {
     // Тестовый маркер
 
     L
-      .marker(
-        this.mapCenter,
-        {
-          title: 'Тестовый маркер'
-        }
-      )
+      .marker(this.mapCenter)
+      .bindTooltip('оз. Круглое')
       .on('click', () => {
         this.drawer = true
       })
