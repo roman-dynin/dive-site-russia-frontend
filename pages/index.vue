@@ -7,6 +7,7 @@
       app
       temporary
       right
+      width="500"
       class="pa-3 fix-z-index"
     >
       <h1 class="text-h6 text-center">
@@ -125,14 +126,14 @@ export default {
 
     addObjectDialog: false,
 
-    tempMarker: null,
-
     map: null,
 
     mapCenter: [
       53.4367995,
       34.2885255
-    ]
+    ],
+
+    tempMarker: null
   }),
 
   mounted () {
