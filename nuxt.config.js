@@ -1,7 +1,7 @@
 export default {
-    mode: 'spa',
+  mode: 'spa',
 
-    buildModules: [
-        '@nuxtjs/vuetify',
-    ]
+  buildModules: [
+    '@nuxtjs/vuetify'
+  ]
 }
