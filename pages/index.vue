@@ -86,6 +86,9 @@
             >
               Добавить объект
             </v-btn>
+            <v-btn class="mr-3">
+              Добавить курс
+            </v-btn>
           </template>
           <template v-else>
             <v-btn
