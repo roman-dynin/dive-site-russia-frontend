@@ -38,6 +38,31 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <!-- Диалог добавления объекта -->
+    <v-dialog
+      v-model="addObjectDialog"
+      max-width="250"
+      class="fix-z-index"
+    >
+      <v-card>
+        <v-card-title class="headline pa-3">
+          Новый объект
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-3">
+          Форма
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="pa-3">
+          <v-btn @click="closeAddObjectDialog">
+            Отмена
+          </v-btn>
+          <v-btn>
+            Сохранить
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-main>
       <div class="d-flex flex-column fill-height">
         <!-- Карта -->
@@ -53,6 +78,12 @@
               @click="setMode(MODE_ADD_DIVE_SITE)"
             >
               Добавить место
+            </v-btn>
+            <v-btn
+              class="mr-3"
+              @click="setMode(MODE_ADD_OBJECT)"
+            >
+              Добавить объект
             </v-btn>
           </template>
           <template v-else>
@@ -74,7 +105,8 @@ import L from 'leaflet'
 
 import {
   MODE_MAP,
-  MODE_ADD_DIVE_SITE
+  MODE_ADD_DIVE_SITE,
+  MODE_ADD_OBJECT
 } from '~/libs/consts'
 
 export default {
@@ -83,13 +115,17 @@ export default {
 
     MODE_ADD_DIVE_SITE,
 
+    MODE_ADD_OBJECT,
+
     drawer: false,
 
     mode: MODE_MAP,
 
     addDiveSiteDialog: false,
 
-    addDiveSiteDialogMarker: null,
+    addObjectDialog: false,
+
+    tempMarker: null,
 
     map: null,
 
@@ -139,13 +175,13 @@ export default {
     // Диалог добавления места
 
     this.map.on('click', (event) => {
-      if (this.mode !== MODE_ADD_DIVE_SITE) {
+      if (this.mode === MODE_MAP) {
         return
       }
 
       // Временный маркер
 
-      this.addDiveSiteDialogMarker = L
+      this.tempMarker = L
         .marker(
           event.latlng,
           {
@@ -153,9 +189,15 @@ export default {
           }
         )
 
-      this.addDiveSiteDialogMarker.addTo(this.map)
+      this.tempMarker.addTo(this.map)
 
-      this.addDiveSiteDialog = true
+      if (this.mode === MODE_ADD_DIVE_SITE) {
+        this.addDiveSiteDialog = true
+      }
+
+      if (this.mode === MODE_ADD_OBJECT) {
+        this.addObjectDialog = true
+      }
     })
   },
 
@@ -175,11 +217,24 @@ export default {
     closeAddDiveSiteDialog () {
       this.mode = MODE_MAP
 
-      this.map.removeLayer(this.addDiveSiteDialogMarker)
+      this.map.removeLayer(this.tempMarker)
 
-      this.addDiveSiteDialogMarker = null
+      this.tempMarker = null
 
       this.addDiveSiteDialog = false
+    },
+
+    /**
+     * Закрытие диалога добавления объекта
+     */
+    closeAddObjectDialog () {
+      this.mode = MODE_MAP
+
+      this.map.removeLayer(this.tempMarker)
+
+      this.tempMarker = null
+
+      this.addObjectDialog = false
     }
   }
 }
