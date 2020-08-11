@@ -1,34 +1,112 @@
 <template>
   <v-app>
-    <div
-      id="map"
-      class="map"
-    />
-    <v-btn @click.prevent="setMode(1)">
-      Добавить место
-    </v-btn>
+    <!-- Боковая / нижняя панель -->
+    <v-navigation-drawer
+      v-model="drawer"
+      :bottom="$vuetify.breakpoint.smAndDown"
+      app
+      temporary
+      right
+      class="pa-3 fix-z-index"
+    >
+      <h1 class="text-h6 text-center">
+        Название места
+      </h1>
+    </v-navigation-drawer>
+    <!-- Диалог добавления места -->
+    <v-dialog
+      v-model="addDiveSiteDialog"
+      max-width="250"
+      class="fix-z-index"
+    >
+      <v-card>
+        <v-card-title class="headline pa-3">
+          Новое место
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-3">
+          Форма
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="pa-3">
+          <v-btn @click="closeAddDiveSiteDialog">
+            Отмена
+          </v-btn>
+          <v-btn>
+            Сохранить
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-main>
+      <div class="d-flex flex-column fill-height">
+        <!-- Карта -->
+        <div
+          id="map"
+          class="d-flex fill-height"
+        />
+        <!-- Инструменты -->
+        <div class="d-flex pa-3">
+          <template v-if="mode === MODE_MAP">
+            <v-btn
+              class="mr-3"
+              @click="setMode(MODE_ADD_DIVE_SITE)"
+            >
+              Добавить место
+            </v-btn>
+          </template>
+          <template v-else>
+            <v-btn
+              class="mr-3"
+              @click="setMode(MODE_MAP)"
+            >
+              Отмена
+            </v-btn>
+          </template>
+        </div>
+      </div>
+    </v-main>
   </v-app>
 </template>
 
 <script>
 import L from 'leaflet'
 
+import {
+  MODE_MAP,
+  MODE_ADD_DIVE_SITE
+} from '~/libs/consts'
+
 export default {
   data: () => ({
+    MODE_MAP,
+
+    MODE_ADD_DIVE_SITE,
+
+    drawer: false,
+
+    mode: MODE_MAP,
+
+    addDiveSiteDialog: false,
+
+    addDiveSiteDialogMarker: null,
+
     map: null,
 
-    center: [
+    mapCenter: [
       53.4367995,
       34.2885255
-    ],
-
-    mode: 0
+    ]
   }),
 
   mounted () {
+    // Карта
+
     this.map = L
       .map('map')
-      .setView(this.center, 17)
+      .setView(this.mapCenter, 17)
+
+    // Слой Google Maps
 
     L
       .tileLayer(
@@ -44,26 +122,64 @@ export default {
       )
       .addTo(this.map)
 
+    // Тестовый маркер
+
+    L
+      .marker(
+        this.mapCenter,
+        {
+          title: 'Тестовый маркер'
+        }
+      )
+      .on('click', () => {
+        this.drawer = true
+      })
+      .addTo(this.map)
+
+    // Диалог добавления места
+
     this.map.on('click', (event) => {
-      if (this.mode !== 1) {
+      if (this.mode !== MODE_ADD_DIVE_SITE) {
         return
       }
 
-      L
+      // Временный маркер
+
+      this.addDiveSiteDialogMarker = L
         .marker(
           event.latlng,
           {
-            title: 'Новое место',
-            opacity: 0.8
+            title: 'Новое место'
           }
         )
-        .addTo(this.map)
+
+      this.addDiveSiteDialogMarker.addTo(this.map)
+
+      this.addDiveSiteDialog = true
     })
   },
 
   methods: {
+    /**
+     * Изменение "режима" приложения
+     *
+     * @param {number} mode Константа MODE_*
+     */
     setMode (mode) {
       this.mode = mode
+    },
+
+    /**
+     * Закрытие диалога добавления места
+     */
+    closeAddDiveSiteDialog () {
+      this.mode = MODE_MAP
+
+      this.map.removeLayer(this.addDiveSiteDialogMarker)
+
+      this.addDiveSiteDialogMarker = null
+
+      this.addDiveSiteDialog = false
     }
   }
 }
@@ -72,8 +188,8 @@ export default {
 <style src="leaflet/dist/leaflet.css"></style>
 
 <style>
-.map {
-  width: 100%;
-  height: 100%;
+.fix-z-index
+{
+  z-index: 1001;
 }
 </style>
