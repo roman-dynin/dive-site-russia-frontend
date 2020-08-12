@@ -6,6 +6,7 @@
     "start": "nuxt start"
   },
   "dependencies": {
+    "@nuxtjs/axios": "^5.12.1",
     "leaflet": "^1.6.0",
     "lodash": "^4.17.19",
     "nuxt": "^2.14.1"

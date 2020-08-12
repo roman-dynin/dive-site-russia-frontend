@@ -18,11 +18,11 @@
           </v-icon>
         </h1>
         <v-text-field
-          v-model.trim="tempDiveSite.title"
+          v-model.trim="editableDiveSite.title"
           label="Название"
         />
         <v-textarea
-          v-model.trim="tempDiveSite.description"
+          v-model.trim="editableDiveSite.description"
           label="Описание"
         />
         <v-btn
@@ -39,7 +39,7 @@
         </v-btn>
       </template>
       <!-- Режим добавления объекта -->
-      <template v-if="mode === MODE_ADD_OBJECT">
+      <template v-if="mode === MODE_ADD_SUBMERGED_OBJECT">
         <h1 class="text-h6 text-center">
           Добавление объекта
           <v-icon class="ml-2">
@@ -47,11 +47,11 @@
           </v-icon>
         </h1>
         <v-text-field
-          v-model.trim="tempObject.title"
+          v-model.trim="editableSubmergedObject.title"
           label="Название"
         />
         <v-textarea
-          v-model.trim="tempObject.description"
+          v-model.trim="editableSubmergedObject.description"
           label="Описание"
         />
         <v-btn
@@ -76,15 +76,15 @@
           </v-icon>
         </h1>
         <v-text-field
-          v-model.trim="tempCourse.title"
+          v-model.trim="editableCourse.title"
           label="Название"
         />
         <v-textarea
-          v-model.trim="tempCourse.description"
+          v-model.trim="editableCourse.description"
           label="Описание"
         />
         <v-text-field
-          v-model.number="tempCourse.direction"
+          v-model.number="editableCourse.direction"
           type="number"
           min="0"
           max="360"
@@ -114,7 +114,7 @@
       <v-icon class="mr-2">
         mdi-diving-flippers
       </v-icon>
-      <v-toolbar-title>diving-map.ru</v-toolbar-title>
+      <v-toolbar-title>diving-map.io</v-toolbar-title>
       <v-spacer />
       <v-btn
         small
@@ -185,7 +185,7 @@
             <v-btn
               small
               class="mr-4"
-              @click="onAddEntryMode(MODE_ADD_OBJECT)"
+              @click="onAddEntryMode(MODE_ADD_SUBMERGED_OBJECT)"
             >
               Добавить объект
               <v-icon
@@ -230,12 +230,12 @@ import {
   MODE_VIEW,
   MODE_DRAW,
   MODE_ADD_DIVE_SITE,
-  MODE_ADD_OBJECT,
+  MODE_ADD_SUBMERGED_OBJECT,
   MODE_ADD_COURSE,
   TEMP_MARKER_STUB,
   TEMP_POLYLINE_STUB,
   DIVE_SITE_STUB,
-  OBJECT_STUB,
+  SUBMERGED_OBJECT_STUB,
   COURSE_STUB
 } from '~/libs/consts'
 
@@ -250,8 +250,8 @@ const diveSiteMarkerIcon = L.icon({
 /**
  * Иконка объекта
  */
-const objectMarkerIcon = L.icon({
-  iconUrl: 'object-marker-icon.png',
+const submergedObjectMarkerIcon = L.icon({
+  iconUrl: 'submerged-object-marker-icon.png',
   iconSize: [36, 36]
 })
 
@@ -280,7 +280,7 @@ export default {
 
       MODE_ADD_DIVE_SITE,
 
-      MODE_ADD_OBJECT,
+      MODE_ADD_SUBMERGED_OBJECT,
 
       MODE_ADD_COURSE,
 
@@ -335,17 +335,17 @@ export default {
       /**
        * Место
        */
-      tempDiveSite: _.cloneDeep(DIVE_SITE_STUB),
+      editableDiveSite: _.cloneDeep(DIVE_SITE_STUB),
 
       /**
        * Объект
        */
-      tempObject: _.cloneDeep(OBJECT_STUB),
+      editableSubmergedObject: _.cloneDeep(SUBMERGED_OBJECT_STUB),
 
       /**
        * Курс
        */
-      tempCourse: _.cloneDeep(COURSE_STUB)
+      editableCourse: _.cloneDeep(COURSE_STUB)
     }
   },
 
@@ -446,8 +446,8 @@ export default {
             icon = diveSiteMarkerIcon
           }
 
-          if (mode === MODE_ADD_OBJECT) {
-            icon = objectMarkerIcon
+          if (mode === MODE_ADD_SUBMERGED_OBJECT) {
+            icon = submergedObjectMarkerIcon
           }
 
           // Маркер

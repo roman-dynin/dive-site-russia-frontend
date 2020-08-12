@@ -24,7 +24,7 @@ export const MODE_ADD_DIVE_SITE = 2
  *
  * @type {number}
  */
-export const MODE_ADD_OBJECT = 3
+export const MODE_ADD_SUBMERGED_OBJECT = 3
 
 /**
  * Режим добавления курса
@@ -75,7 +75,7 @@ export const DIVE_SITE_STUB = {
 /**
  * Объект
  */
-export const OBJECT_STUB = {
+export const SUBMERGED_OBJECT_STUB = {
   id: null,
   title: null,
   description: null
