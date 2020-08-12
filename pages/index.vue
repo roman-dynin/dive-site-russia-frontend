@@ -1,106 +1,134 @@
 <template>
   <v-app>
-    <!-- Боковая / нижняя панель -->
+    <!-- Панель для работы с записью -->
     <v-navigation-drawer
-      v-model="drawer"
+      v-model="entryManagerDrawer"
       :bottom="$vuetify.breakpoint.smAndDown"
       app
-      temporary
-      right
+      clipped
       width="500"
-      class="pa-3 fix-z-index"
+      class="pa-4 fix-z-index"
     >
-      <h1 class="text-h6 text-center">
-        Название места
-      </h1>
-    </v-navigation-drawer>
-    <!-- Диалог добавления места -->
-    <v-dialog
-      v-model="addDiveSiteDialog"
-      max-width="250"
-      class="fix-z-index"
-    >
-      <v-card>
-        <v-card-title class="headline pa-3">
+      <!-- Режим добавления места -->
+      <template v-if="mode === MODE_ADD_DIVE_SITE">
+        <h1 class="text-h6 text-center">
           Новое место
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-3">
-          Форма
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="pa-3">
-          <v-btn @click="closeAddDiveSiteDialog">
-            Отмена
-          </v-btn>
-          <v-btn>
-            Сохранить
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <!-- Диалог добавления объекта -->
-    <v-dialog
-      v-model="addObjectDialog"
-      max-width="250"
-      class="fix-z-index"
-    >
-      <v-card>
-        <v-card-title class="headline pa-3">
-          Новый объект
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-3">
-          Форма
-        </v-card-text>
-        <v-divider />
-        <v-card-actions class="pa-3">
-          <v-btn @click="closeAddObjectDialog">
-            Отмена
-          </v-btn>
-          <v-btn>
-            Сохранить
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-    <v-main>
-      <div class="d-flex flex-column fill-height">
-        <!-- Карта -->
-        <div
-          id="map"
-          class="d-flex fill-height"
+        </h1>
+        <v-text-field
+          v-model.trim="tempMarker.title"
+          label="Название"
         />
-        <!-- Инструменты -->
-        <div class="d-flex pa-3">
-          <template v-if="mode === MODE_MAP">
-            <v-btn
-              class="mr-3"
-              @click="setMode(MODE_ADD_DIVE_SITE)"
-            >
-              Добавить место
-            </v-btn>
-            <v-btn
-              class="mr-3"
-              @click="setMode(MODE_ADD_OBJECT)"
-            >
-              Добавить объект
-            </v-btn>
-            <v-btn class="mr-3">
-              Добавить курс
-            </v-btn>
-          </template>
-          <template v-else>
-            <v-btn
-              class="mr-3"
-              @click="setMode(MODE_MAP)"
-            >
-              Отмена
-            </v-btn>
-          </template>
-        </div>
-      </div>
+        <v-btn
+          block
+          class="mb-4"
+        >
+          Сохранить
+        </v-btn>
+        <v-btn
+          block
+          @click="offAddEntryMode"
+        >
+          Отмена
+        </v-btn>
+      </template>
+      <!-- Режим добавления объекта -->
+      <template v-if="mode === MODE_ADD_OBJECT">
+        <h1 class="text-h6 text-center">
+          Новый объект
+        </h1>
+        <v-text-field
+          v-model.trim="tempMarker.title"
+          label="Название"
+        />
+        <v-btn
+          block
+          class="mb-4"
+        >
+          Сохранить
+        </v-btn>
+        <v-btn
+          block
+          @click="offAddEntryMode"
+        >
+          Отмена
+        </v-btn>
+      </template>
+      <!-- Режим добавления курса -->
+      <template v-if="mode === MODE_ADD_COURSE">
+        <h1 class="text-h6 text-center">
+          Новый курс
+        </h1>
+        <v-text-field
+          v-model="tempPolyline.direction"
+          type="number"
+          min="0"
+          max="360"
+          label="Курс"
+        />
+        <v-btn
+          block
+          class="mb-4"
+        >
+          Сохранить
+        </v-btn>
+        <v-btn
+          block
+          @click="offAddEntryMode"
+        >
+          Отмена
+        </v-btn>
+      </template>
+    </v-navigation-drawer>
+    <!-- Шапка -->
+    <v-app-bar
+      app
+      clipped-left
+    >
+      <v-app-bar-nav-icon />
+      <v-toolbar-title>diving-map.ru</v-toolbar-title>
+    </v-app-bar>
+    <v-main>
+      <div
+        id="map"
+        class="fill-height"
+      />
     </v-main>
+    <!-- Подвал -->
+    <v-footer
+      app
+      padless
+    >
+      <v-card
+        flat
+        tile
+        width="100%"
+      >
+        <v-card-text v-if="mode === MODE_VIEW">
+          <v-btn
+            class="mr-4"
+            @click="onAddEntryMode(MODE_ADD_DIVE_SITE)"
+          >
+            Добавить место
+          </v-btn>
+          <v-btn
+            class="mr-4"
+            @click="onAddEntryMode(MODE_ADD_OBJECT)"
+          >
+            Добавить объект
+          </v-btn>
+          <v-btn
+            class="mr-4"
+            @click="onAddEntryMode(MODE_ADD_COURSE)"
+          >
+            Добавить курс
+          </v-btn>
+        </v-card-text>
+        <v-divider />
+        <v-card-text>
+          {{ new Date().getFullYear() }}
+        </v-card-text>
+      </v-card>
+    </v-footer>
   </v-app>
 </template>
 
@@ -108,36 +136,95 @@
 import L from 'leaflet'
 
 import {
-  MODE_MAP,
+  MODE_VIEW,
+  MODE_DRAW,
   MODE_ADD_DIVE_SITE,
-  MODE_ADD_OBJECT
+  MODE_ADD_OBJECT,
+  MODE_ADD_COURSE
 } from '~/libs/consts'
 
+/**
+ * Иконка места
+ */
+const diveSiteMarkerIcon = L.icon({
+  iconUrl: 'dive-site-marker-icon.png',
+  iconSize: [24, 24]
+})
+
+/**
+ * Иконка объекта
+ */
+const objectMarkerIcon = L.icon({
+  iconUrl: 'object-marker-icon.png',
+  iconSize: [24, 24]
+})
+
+/**
+ * Иконка курса (точка A)
+ */
+const courseMarkerIconA = L.icon({
+  iconUrl: 'course-marker-icon-a.png',
+  iconSize: [24, 24]
+})
+
+/**
+ * Иконка курса (точка B)
+ */
+const courseMarkerIconB = L.icon({
+  iconUrl: 'course-marker-icon-b.png',
+  iconSize: [24, 24]
+})
+
 export default {
-  data: () => ({
-    MODE_MAP,
+  data () {
+    return {
+      MODE_VIEW,
 
-    MODE_ADD_DIVE_SITE,
+      MODE_ADD_DIVE_SITE,
 
-    MODE_ADD_OBJECT,
+      MODE_ADD_OBJECT,
 
-    drawer: false,
+      MODE_ADD_COURSE,
 
-    mode: MODE_MAP,
+      /**
+       * Тек. режим
+       */
+      mode: MODE_VIEW,
 
-    addDiveSiteDialog: false,
+      /**
+       * Панель для работы с записью
+       */
+      entryManagerDrawer: false,
 
-    addObjectDialog: false,
+      /**
+       * Панель для отображения записи
+       */
+      entryDrawer: false,
 
-    map: null,
+      /**
+       * Карта
+       */
+      map: null,
 
-    mapCenter: [
-      53.4367995,
-      34.2885255
-    ],
+      /**
+       * Координаты центра карты по умолчанию
+       */
+      mapCenter: [
+        53.4367995,
+        34.2885255
+      ],
 
-    tempMarker: null
-  }),
+      /**
+       * Временные данные для работы с местом / объектом
+       */
+      tempMarker: this.getDefaultTempMarker(),
+
+      /**
+       * Временные данные для работы с курсом
+       */
+      tempPolyline: this.getDefaultTempPolyline()
+    }
+  },
 
   mounted () {
     // Карта
@@ -161,81 +248,154 @@ export default {
         }
       )
       .addTo(this.map)
-
-    // Тестовый маркер
-
-    L
-      .marker(this.mapCenter)
-      .bindTooltip('оз. Круглое')
-      .on('click', () => {
-        this.drawer = true
-      })
-      .addTo(this.map)
-
-    // Диалог добавления места
-
-    this.map.on('click', (event) => {
-      if (this.mode === MODE_MAP) {
-        return
-      }
-
-      // Временный маркер
-
-      this.tempMarker = L
-        .marker(
-          event.latlng,
-          {
-            title: 'Новое место'
-          }
-        )
-
-      this.tempMarker.addTo(this.map)
-
-      if (this.mode === MODE_ADD_DIVE_SITE) {
-        this.addDiveSiteDialog = true
-      }
-
-      if (this.mode === MODE_ADD_OBJECT) {
-        this.addObjectDialog = true
-      }
-    })
   },
 
   methods: {
     /**
-     * Изменение "режима" приложения
+     * Активация режима добавления места / объекта / курса
      *
-     * @param {number} mode Константа MODE_*
+     * @param {number} mode Режим, константа MODE_*
      */
-    setMode (mode) {
-      this.mode = mode
+    onAddEntryMode (mode) {
+      this.mode = MODE_DRAW
+
+      this.map.on('click', (event) => {
+        // Режим добавления курса
+
+        if (mode === MODE_ADD_COURSE) {
+          // Иконка маркера
+
+          const icon = this.tempPolyline.markers.length ? courseMarkerIconB : courseMarkerIconA
+
+          // Маркер
+
+          const marker = L
+            .marker(
+              event.latlng,
+              {
+                icon,
+                draggable: true
+              }
+            )
+            .on('move', () => {
+              // Перерисовка линии при перемещении маркера
+
+              const points = this.tempPolyline.markers.map(marker => marker.getLatLng())
+
+              this.tempPolyline.polyline.setLatLngs(points)
+            })
+
+          this.tempPolyline.markers.push(marker)
+
+          this.map.addLayer(marker)
+
+          // Маркер точки B?
+
+          if (this.tempPolyline.markers.length === 2) {
+            const points = this.tempPolyline.markers.map(marker => marker.getLatLng())
+
+            this.tempPolyline.polyline = new L.Polyline(points)
+
+            this.map.addLayer(this.tempPolyline.polyline)
+
+            this.map.off('click')
+
+            //
+
+            this.mode = mode
+
+            this.entryManagerDrawer = true
+          }
+        } else {
+          // Иконка маркера
+
+          let icon
+
+          if (mode === MODE_ADD_DIVE_SITE) {
+            icon = diveSiteMarkerIcon
+          }
+
+          if (mode === MODE_ADD_OBJECT) {
+            icon = objectMarkerIcon
+          }
+
+          // Маркер
+
+          this.tempMarker.marker = L.marker(event.latlng, {
+            icon,
+            draggable: true
+          })
+
+          this.map.addLayer(this.tempMarker.marker)
+
+          this.map.off('click')
+
+          //
+
+          this.mode = mode
+
+          this.entryManagerDrawer = true
+        }
+      })
     },
 
     /**
-     * Закрытие диалога добавления места
+     * Деактивация режима добавления места / объекта / курса
      */
-    closeAddDiveSiteDialog () {
-      this.mode = MODE_MAP
+    offAddEntryMode () {
+      // Режим добавления курса
 
-      this.map.removeLayer(this.tempMarker)
+      if (this.mode === MODE_ADD_COURSE) {
+        // Удаление маркеров и линии
 
-      this.tempMarker = null
+        this.tempPolyline.markers.forEach(marker => this.map.removeLayer(marker))
 
-      this.addDiveSiteDialog = false
+        this.map.removeLayer(this.tempPolyline.polyline)
+
+        this.tempPolyline = this.getDefaultTempPolyline()
+      } else {
+        // Удаление маркера
+        this.map.removeLayer(this.tempMarker.marker)
+
+        this.tempMarker = this.getDefaultTempMarker()
+      }
+
+      this.mode = MODE_VIEW
+
+      this.entryManagerDrawer = false
     },
 
     /**
-     * Закрытие диалога добавления объекта
+     * Получение временные данных для работы с местом / объектом по умолчанию
      */
-    closeAddObjectDialog () {
-      this.mode = MODE_MAP
+    getDefaultTempMarker: () => ({
+      /**
+       * Марке
+       */
+      marker: null,
 
-      this.map.removeLayer(this.tempMarker)
+      title: null
+    }),
 
-      this.tempMarker = null
+    /**
+     * Получение временных данных для работы с курсом по умолчанию
+     */
+    getDefaultTempPolyline: () => ({
+      /**
+       * Маркеры (точка A и B)
+       */
+      markers: [],
 
-      this.addObjectDialog = false
-    }
+      /**
+       * Линия
+       */
+      polyline: null,
+
+      /**
+       * Направление (число от 0 до 360)
+       */
+      direction: 0
+    })
   }
 }
 </script>
