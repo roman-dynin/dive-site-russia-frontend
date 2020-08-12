@@ -506,7 +506,7 @@ export default {
     },
 
     /**
-     * Поиск местаположения пользователя
+     * Поиск местоположения пользователя
      */
     getCurrentPosition () {
       if (!('geolocation' in navigator)) {
