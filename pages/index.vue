@@ -7,16 +7,23 @@
       app
       clipped
       width="500"
-      class="pa-4 fix-z-index"
+      class="pa-4 z-index--big"
     >
       <!-- Режим добавления места -->
       <template v-if="mode === MODE_ADD_DIVE_SITE">
         <h1 class="text-h6 text-center">
-          Новое место
+          Добавление места
+          <v-icon class="ml-2">
+            mdi-map-marker-radius
+          </v-icon>
         </h1>
         <v-text-field
-          v-model.trim="tempMarker.title"
+          v-model.trim="tempDiveSite.title"
           label="Название"
+        />
+        <v-textarea
+          v-model.trim="tempDiveSite.description"
+          label="Описание"
         />
         <v-btn
           block
@@ -34,11 +41,18 @@
       <!-- Режим добавления объекта -->
       <template v-if="mode === MODE_ADD_OBJECT">
         <h1 class="text-h6 text-center">
-          Новый объект
+          Добавление объекта
+          <v-icon class="ml-2">
+            mdi-map-marker-down
+          </v-icon>
         </h1>
         <v-text-field
-          v-model.trim="tempMarker.title"
+          v-model.trim="tempObject.title"
           label="Название"
+        />
+        <v-textarea
+          v-model.trim="tempObject.description"
+          label="Описание"
         />
         <v-btn
           block
@@ -56,10 +70,21 @@
       <!-- Режим добавления курса -->
       <template v-if="mode === MODE_ADD_COURSE">
         <h1 class="text-h6 text-center">
-          Новый курс
+          Добавление курса
+          <v-icon class="ml-2">
+            mdi-map-marker-distance
+          </v-icon>
         </h1>
         <v-text-field
-          v-model="tempPolyline.direction"
+          v-model.trim="tempCourse.title"
+          label="Название"
+        />
+        <v-textarea
+          v-model.trim="tempCourse.description"
+          label="Описание"
+        />
+        <v-text-field
+          v-model.number="tempCourse.direction"
           type="number"
           min="0"
           max="360"
@@ -83,56 +108,122 @@
     <v-app-bar
       app
       clipped-left
+      flat
+      dark
     >
-      <v-app-bar-nav-icon />
+      <v-icon class="mr-2">
+        mdi-diving-flippers
+      </v-icon>
       <v-toolbar-title>diving-map.ru</v-toolbar-title>
+      <v-spacer />
+      <v-btn
+        small
+        light
+      >
+        Вход
+        <v-icon
+          small
+          class="ml-2"
+        >
+          mdi-login-variant
+        </v-icon>
+      </v-btn>
     </v-app-bar>
     <v-main>
-      <div
-        id="map"
-        class="fill-height"
-      />
+      <div class="map-wrapper fill-height">
+        <!-- Карта -->
+        <div
+          id="map"
+          class="fill-height"
+        />
+        <!-- Кнопки управления -->
+        <div class="pa-4 map-actions map-actions--top map-actions--right z-index--big">
+          <v-btn
+            small
+            @click="getCurrentPosition"
+          >
+            <v-icon small>
+              mdi-crosshairs-gps
+            </v-icon>
+          </v-btn>
+        </div>
+        <div class="pa-4 map-actions map-actions--top z-index--big">
+          <v-btn-toggle small>
+            <v-btn
+              small
+              @click="map.zoomIn()"
+            >
+              <v-icon small>
+                mdi-plus
+              </v-icon>
+            </v-btn>
+            <v-btn
+              small
+              @click="map.zoomOut()"
+            >
+              <v-icon small>
+                mdi-minus
+              </v-icon>
+            </v-btn>
+          </v-btn-toggle>
+        </div>
+        <div class="pa-4 map-actions map-actions map-actions--bottom z-index--big">
+          <template v-if="mode === MODE_VIEW">
+            <v-btn
+              small
+              class="mr-4"
+              @click="onAddEntryMode(MODE_ADD_DIVE_SITE)"
+            >
+              Добавить место
+              <v-icon
+                small
+                class="ml-2"
+              >
+                mdi-map-marker-radius
+              </v-icon>
+            </v-btn>
+            <v-btn
+              small
+              class="mr-4"
+              @click="onAddEntryMode(MODE_ADD_OBJECT)"
+            >
+              Добавить объект
+              <v-icon
+                small
+                class="ml-2"
+              >
+                mdi-map-marker-down
+              </v-icon>
+            </v-btn>
+            <v-btn
+              small
+              @click="onAddEntryMode(MODE_ADD_COURSE)"
+            >
+              Добавить курс
+              <v-icon
+                small
+                class="ml-2"
+              >
+                mdi-map-marker-distance
+              </v-icon>
+            </v-btn>
+          </template>
+        </div>
+      </div>
     </v-main>
     <!-- Подвал -->
     <v-footer
       app
-      padless
+      dark
     >
-      <v-card
-        flat
-        tile
-        width="100%"
-      >
-        <v-card-text v-if="mode === MODE_VIEW">
-          <v-btn
-            class="mr-4"
-            @click="onAddEntryMode(MODE_ADD_DIVE_SITE)"
-          >
-            Добавить место
-          </v-btn>
-          <v-btn
-            class="mr-4"
-            @click="onAddEntryMode(MODE_ADD_OBJECT)"
-          >
-            Добавить объект
-          </v-btn>
-          <v-btn
-            class="mr-4"
-            @click="onAddEntryMode(MODE_ADD_COURSE)"
-          >
-            Добавить курс
-          </v-btn>
-        </v-card-text>
-        <v-divider />
-        <v-card-text>
-          {{ new Date().getFullYear() }}
-        </v-card-text>
-      </v-card>
+      Made with ❤️ by Roman Dynin
     </v-footer>
   </v-app>
 </template>
 
 <script>
+import _ from 'lodash'
+
 import L from 'leaflet'
 
 import {
@@ -140,7 +231,12 @@ import {
   MODE_DRAW,
   MODE_ADD_DIVE_SITE,
   MODE_ADD_OBJECT,
-  MODE_ADD_COURSE
+  MODE_ADD_COURSE,
+  TEMP_MARKER_STUB,
+  TEMP_POLYLINE_STUB,
+  DIVE_SITE_STUB,
+  OBJECT_STUB,
+  COURSE_STUB
 } from '~/libs/consts'
 
 /**
@@ -148,7 +244,7 @@ import {
  */
 const diveSiteMarkerIcon = L.icon({
   iconUrl: 'dive-site-marker-icon.png',
-  iconSize: [24, 24]
+  iconSize: [36, 36]
 })
 
 /**
@@ -156,7 +252,7 @@ const diveSiteMarkerIcon = L.icon({
  */
 const objectMarkerIcon = L.icon({
   iconUrl: 'object-marker-icon.png',
-  iconSize: [24, 24]
+  iconSize: [36, 36]
 })
 
 /**
@@ -179,6 +275,8 @@ export default {
   data () {
     return {
       MODE_VIEW,
+
+      MODE_DRAW,
 
       MODE_ADD_DIVE_SITE,
 
@@ -215,14 +313,39 @@ export default {
       ],
 
       /**
+       * Масштаб карты по умолчанию
+       */
+      mapZoom: 12,
+
+      /**
+       * Масштаб карты при показе места / объекта / курса
+       */
+      mapEntryZoom: 17,
+
+      /**
        * Временные данные для работы с местом / объектом
        */
-      tempMarker: this.getDefaultTempMarker(),
+      tempMarker: _.cloneDeep(TEMP_MARKER_STUB),
 
       /**
        * Временные данные для работы с курсом
        */
-      tempPolyline: this.getDefaultTempPolyline()
+      tempPolyline: _.cloneDeep(TEMP_POLYLINE_STUB),
+
+      /**
+       * Место
+       */
+      tempDiveSite: _.cloneDeep(DIVE_SITE_STUB),
+
+      /**
+       * Объект
+       */
+      tempObject: _.cloneDeep(OBJECT_STUB),
+
+      /**
+       * Курс
+       */
+      tempCourse: _.cloneDeep(COURSE_STUB)
     }
   },
 
@@ -230,8 +353,10 @@ export default {
     // Карта
 
     this.map = L
-      .map('map')
-      .setView(this.mapCenter, 17)
+      .map('map', {
+        zoomControl: false
+      })
+      .setView(this.mapCenter, this.mapZoom)
 
     // Слой Google Maps
 
@@ -258,6 +383,8 @@ export default {
      */
     onAddEntryMode (mode) {
       this.mode = MODE_DRAW
+
+      L.DomUtil.addClass(this.map._container, 'cursor--crosshair')
 
       this.map.on('click', (event) => {
         // Режим добавления курса
@@ -298,7 +425,11 @@ export default {
 
             this.map.addLayer(this.tempPolyline.polyline)
 
+            this.map.setView(marker.getLatLng(), this.mapEntryZoom)
+
             this.map.off('click')
+
+            L.DomUtil.removeClass(this.map._container, 'cursor--crosshair')
 
             //
 
@@ -321,14 +452,23 @@ export default {
 
           // Маркер
 
-          this.tempMarker.marker = L.marker(event.latlng, {
-            icon,
-            draggable: true
-          })
+          const marker = L.marker(
+            event.latlng,
+            {
+              icon,
+              draggable: true
+            }
+          )
 
-          this.map.addLayer(this.tempMarker.marker)
+          this.tempMarker.marker = marker
+
+          this.map.addLayer(marker)
+
+          this.map.setView(marker.getLatLng(), this.mapEntryZoom)
 
           this.map.off('click')
+
+          L.DomUtil.removeClass(this.map._container, 'cursor--crosshair')
 
           //
 
@@ -352,12 +492,12 @@ export default {
 
         this.map.removeLayer(this.tempPolyline.polyline)
 
-        this.tempPolyline = this.getDefaultTempPolyline()
+        this.tempPolyline = _.cloneDeep(TEMP_POLYLINE_STUB)
       } else {
         // Удаление маркера
         this.map.removeLayer(this.tempMarker.marker)
 
-        this.tempMarker = this.getDefaultTempMarker()
+        this.tempMarker = _.cloneDeep(TEMP_MARKER_STUB)
       }
 
       this.mode = MODE_VIEW
@@ -366,36 +506,23 @@ export default {
     },
 
     /**
-     * Получение временные данных для работы с местом / объектом по умолчанию
+     * Поиск местаположения пользователя
      */
-    getDefaultTempMarker: () => ({
-      /**
-       * Марке
-       */
-      marker: null,
+    getCurrentPosition () {
+      if (!('geolocation' in navigator)) {
+        return
+      }
 
-      title: null
-    }),
-
-    /**
-     * Получение временных данных для работы с курсом по умолчанию
-     */
-    getDefaultTempPolyline: () => ({
-      /**
-       * Маркеры (точка A и B)
-       */
-      markers: [],
-
-      /**
-       * Линия
-       */
-      polyline: null,
-
-      /**
-       * Направление (число от 0 до 360)
-       */
-      direction: 0
-    })
+      navigator.geolocation.getCurrentPosition((position) => {
+        this.map.setView(
+          [
+            position.coords.latitude,
+            position.coords.longitude
+          ],
+          this.mapZoom
+        )
+      })
+    }
   }
 }
 </script>
@@ -403,8 +530,38 @@ export default {
 <style src="leaflet/dist/leaflet.css"></style>
 
 <style>
-.fix-z-index
+.z-index--big
 {
   z-index: 1001;
+}
+
+.cursor--crosshair
+{
+  cursor: crosshair !important;
+}
+
+.map-wrapper
+{
+  position: relative;
+}
+
+.map-actions
+{
+  position: absolute;
+}
+
+.map-actions--top
+{
+  top: 0;
+}
+
+.map-actions--right
+{
+  right: 0;
+}
+
+.map-actions--bottom
+{
+  bottom: 0;
 }
 </style>
