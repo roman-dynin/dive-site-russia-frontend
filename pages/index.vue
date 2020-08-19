@@ -1,5 +1,45 @@
 <template>
   <v-app>
+    <v-dialog
+      v-model="authDialog"
+      max-width="500px"
+      class="z-index--big"
+    >
+      <v-card>
+        <v-card-title
+          class="pa-4"
+        >
+          Вход
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-4">
+          <v-btn
+            href="http://localhost:8000/auth/vkontakte"
+            depressed
+          >
+            <v-icon
+              small
+              class="mr-2"
+            >
+              mdi-vk
+            </v-icon>
+            ВКонтакте
+          </v-btn>
+          <v-btn
+            href="http://localhost:8000/auth/telegram"
+            depressed
+          >
+            <v-icon
+              small
+              class="mr-2"
+            >
+              mdi-telegram
+            </v-icon>
+            Telegram
+          </v-btn>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
     <!-- Панель для работы с записью -->
     <v-navigation-drawer
       v-model="entryManagerDrawer"
@@ -28,6 +68,7 @@
         <v-btn
           block
           class="mb-4"
+          @click="addDiveSite"
         >
           Сохранить
         </v-btn>
@@ -57,6 +98,7 @@
         <v-btn
           block
           class="mb-4"
+          @click="addSubmergedObject"
         >
           Сохранить
         </v-btn>
@@ -93,6 +135,7 @@
         <v-btn
           block
           class="mb-4"
+          @click="addCourse"
         >
           Сохранить
         </v-btn>
@@ -117,8 +160,24 @@
       <v-toolbar-title>diving-map.io</v-toolbar-title>
       <v-spacer />
       <v-btn
+        v-if="$auth.loggedIn"
         small
         light
+        @click="$auth.logout()"
+      >
+        Выход
+        <v-icon
+          small
+          class="ml-2"
+        >
+          mdi-logout-variant
+        </v-icon>
+      </v-btn>
+      <v-btn
+        v-else
+        small
+        light
+        @click="authDialog = !authDialog"
       >
         Вход
         <v-icon
@@ -171,6 +230,7 @@
           <template v-if="mode === MODE_VIEW">
             <v-btn
               small
+              color="primary"
               class="mr-4"
               @click="onAddEntryMode(MODE_ADD_DIVE_SITE)"
             >
@@ -238,6 +298,10 @@ import {
   SUBMERGED_OBJECT_STUB,
   COURSE_STUB
 } from '~/libs/consts'
+
+import {
+  request
+} from '~/libs/jsonrpc'
 
 /**
  * Иконка места
@@ -345,11 +409,27 @@ export default {
       /**
        * Курс
        */
-      editableCourse: _.cloneDeep(COURSE_STUB)
+      editableCourse: _.cloneDeep(COURSE_STUB),
+
+      authDialog: false
     }
   },
 
-  mounted () {
+  async mounted () {
+    // Авторизация
+
+    if (this.$route.query.token && !this.$auth.loggedIn) {
+      const token = Buffer.from(this.$route.query.token.toString(), 'base64').toString()
+
+      await this.$auth.setUserToken(token)
+
+      await this.$router.replace({
+        query: {
+          token: undefined
+        }
+      })
+    }
+
     // Карта
 
     this.map = L
@@ -373,6 +453,72 @@ export default {
         }
       )
       .addTo(this.map)
+
+    // Отрисовка точек
+    /*
+
+    const { diveSites } = await request(
+      this.$axios,
+      'divesite_getDiveSites',
+      {}
+    )
+
+    const { submergedObjects } = await request(
+      this.$axios,
+      'submergedObject_getSubmergedObjects',
+      {}
+    )
+
+    const { courses } = await request(
+      this.$axios,
+      'course_getCourses',
+      {}
+    )
+
+    diveSites.forEach((diveSite) => {
+      L
+        .marker(
+          diveSite.point.location,
+          {
+            icon: diveSiteMarkerIcon
+          }
+        )
+        .bindTooltip(diveSite.title)
+        .addTo(this.map)
+    })
+
+    submergedObjects.forEach((submergedObject) => {
+      L
+        .marker(
+          submergedObject.point.location,
+          {
+            icon: submergedObjectMarkerIcon
+          }
+        )
+        .bindTooltip(submergedObject.title)
+        .addTo(this.map)
+    })
+
+    courses.forEach((course) => {
+      course.points.forEach((point, index) => {
+        const icon = index === 0 ? courseMarkerIconA : courseMarkerIconB
+
+        L
+          .marker(
+            point.location,
+            {
+              icon
+            }
+          )
+          .bindTooltip(course.title)
+          .addTo(this.map)
+      })
+
+      const points = course.points.map(point => point.location)
+
+      L.polyline(points).addTo(this.map)
+    })
+    */
   },
 
   methods: {
@@ -522,6 +668,96 @@ export default {
           this.mapZoom
         )
       })
+    },
+
+    /**
+     * Добавление места
+     */
+    async addDiveSite () {
+      const { diveSite } = await request(
+        this.$axios,
+        'divesite_addDiveSite',
+        {
+          title: this.editableDiveSite.title,
+          description: this.editableDiveSite.description,
+          location: this.tempMarker.marker.getLatLng()
+        }
+      )
+
+      L
+        .marker(
+          diveSite.point.location,
+          {
+            icon: diveSiteMarkerIcon
+          }
+        )
+        .bindTooltip(diveSite.title)
+        .addTo(this.map)
+
+      this.editableDiveSite = _.cloneDeep(DIVE_SITE_STUB)
+
+      this.offAddEntryMode()
+    },
+
+    async addSubmergedObject () {
+      const { submergedObject } = await request(
+        this.$axios,
+        'submergedObject_addSubmergedObject',
+        {
+          title: this.editableSubmergedObject.title,
+          description: this.editableSubmergedObject.description,
+          point: this.tempMarker.marker.getLatLng()
+        }
+      )
+
+      L
+        .marker(
+          submergedObject.point.location,
+          {
+            icon: submergedObjectMarkerIcon
+          }
+        )
+        .bindTooltip(submergedObject.title)
+        .addTo(this.map)
+
+      this.editableSubmergedObject = _.cloneDeep(SUBMERGED_OBJECT_STUB)
+
+      this.offAddEntryMode()
+    },
+
+    async addCourse () {
+      const { course } = await request(
+        this.$axios,
+        'course_addCourse',
+        {
+          title: this.editableCourse.title,
+          description: this.editableCourse.description,
+          direction: this.editableCourse.direction,
+          points: this.tempPolyline.markers.map(marker => marker.getLatLng())
+        }
+      )
+
+      course.points.forEach((point, index) => {
+        const icon = index === 0 ? courseMarkerIconA : courseMarkerIconB
+
+        L
+          .marker(
+            point.location,
+            {
+              icon
+            }
+          )
+          .bindTooltip(course.title)
+          .addTo(this.map)
+      })
+
+      const points = course.points.map(point => point.location)
+
+      L.polyline(points).addTo(this.map)
+
+      this.editableCourse = _.cloneDeep(COURSE_STUB)
+
+      this.offAddEntryMode()
     }
   }
 }

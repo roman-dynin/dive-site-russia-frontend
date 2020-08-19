@@ -6,7 +6,9 @@
     "start": "nuxt start"
   },
   "dependencies": {
+    "@nuxtjs/auth-next": "^5.0.0-1595976864.509d9d6",
     "@nuxtjs/axios": "^5.12.1",
+    "dotenv": "^8.2.0",
     "leaflet": "^1.6.0",
     "lodash": "^4.17.19",
     "nuxt": "^2.14.1"

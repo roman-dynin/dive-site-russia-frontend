@@ -39,6 +39,8 @@ export const MODE_ADD_COURSE = 4
 export const TEMP_MARKER_STUB = {
   /**
    * Маркер
+   *
+   * @type L.Marker
    */
   marker: null
 }
