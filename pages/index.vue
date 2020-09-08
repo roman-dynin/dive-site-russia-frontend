@@ -25,18 +25,6 @@
             </v-icon>
             ВКонтакте
           </v-btn>
-          <v-btn
-            href="http://localhost:8000/auth/telegram"
-            depressed
-          >
-            <v-icon
-              small
-              class="mr-2"
-            >
-              mdi-telegram
-            </v-icon>
-            Telegram
-          </v-btn>
         </v-card-text>
       </v-card>
     </v-dialog>

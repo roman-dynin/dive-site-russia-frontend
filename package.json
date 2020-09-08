@@ -1,5 +1,5 @@
 {
-  "name": "dive-site-russia",
+  "name": "dive-site-russia-frontend",
   "scripts": {
     "dev": "nuxt",
     "build": "nuxt build",
