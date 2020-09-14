@@ -1,18 +1,18 @@
 <template>
   <v-app>
+    <!-- Окно авторизации -->
     <v-dialog
       v-model="authDialog"
       max-width="500px"
       class="z-index--big"
     >
       <v-card>
-        <v-card-title
-          class="pa-4"
-        >
+        <v-card-title class="pa-4">
           Вход
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-4">
+          <!-- TODO: Подставлять значение из .env -->
           <v-btn
             href="http://localhost:8000/auth/vkontakte"
             depressed
@@ -28,65 +28,139 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <!-- Панель для работы с записью -->
+    <v-navigation-drawer
+      v-model="entryDrawer"
+      :bottom="$vuetify.breakpoint.smAndDown"
+      app
+      clipped
+      right
+      width="500px"
+      class="pa-4 z-index--big"
+    >
+      <template v-if="viewMode === 1 && diveSite">
+        <div class="mb-4 text-h6">
+          {{ diveSite.title }}
+        </div>
+        <div class="mb-4">
+          {{ diveSite.description }}
+        </div>
+        <div class="mb-4 caption">
+          {{ diveSite.location.lat }},{{ diveSite.location.lng }}
+        </div>
+        <v-btn
+          block
+          depressed
+          @click="editDiveSite(diveSite.id)"
+        >
+          Редактировать
+        </v-btn>
+      </template>
+      <template v-if="viewMode === 2 && placemark">
+        <div class="mb-4 text-h6">
+          {{ placemark.title }}
+        </div>
+        <div class="mb-4">
+          {{ placemark.description }}
+        </div>
+        <div class="mb-4 caption">
+          {{ placemark.location.lat }},{{ placemark.location.lng }}
+        </div>
+        <v-btn
+          block
+          depressed
+          @click="editPlacemark(placemark.id)"
+        >
+          Редактировать
+        </v-btn>
+      </template>
+      <template v-if="viewMode === 3 && course">
+        <div class="mb-4 text-h6">
+          {{ course.title }}
+        </div>
+        <div class="mb-4">
+          {{ course.description }}
+        </div>
+        <div class="mb-4 caption">
+          {{ course.direction }} &deg;
+        </div>
+        <v-btn
+          block
+          depressed
+          @click="editCourse(course.id)"
+        >
+          Редактировать
+        </v-btn>
+      </template>
+    </v-navigation-drawer>
+    <!-- Панель для добавления / редактирования места / метки / курса -->
     <v-navigation-drawer
       v-model="entryManagerDrawer"
       :bottom="$vuetify.breakpoint.smAndDown"
       app
       clipped
-      width="500"
+      width="500px"
       class="pa-4 z-index--big"
     >
-      <!-- Режим добавления места -->
+      <!-- Добавление / редактирование места -->
       <template v-if="mode === MODE_ADD_DIVE_SITE">
-        <h1 class="text-h6 text-center">
-          Добавление места
+        <h1 class="mb-4 text-h6">
+          <template v-if="editableDiveSite.id">
+            Редактирование места
+          </template>
+          <template v-else>
+            Добавление места
+          </template>
           <v-icon class="ml-2">
             mdi-map-marker-radius
           </v-icon>
         </h1>
         <v-text-field
           v-model.trim="editableDiveSite.title"
+          filled
           label="Название"
         />
         <v-textarea
           v-model.trim="editableDiveSite.description"
+          filled
           label="Описание"
         />
         <v-btn
           block
+          depressed
+          color="primary"
           class="mb-4"
-          @click="addDiveSite"
+          @click="storeDiveSite"
         >
           Сохранить
         </v-btn>
         <v-btn
           block
+          depressed
           @click="offAddEntryMode"
         >
           Отмена
         </v-btn>
       </template>
-      <!-- Режим добавления объекта -->
-      <template v-if="mode === MODE_ADD_SUBMERGED_OBJECT">
+      <!-- Добавление / редактирование метки -->
+      <template v-if="mode === MODE_ADD_PLACEMARK">
         <h1 class="text-h6 text-center">
-          Добавление объекта
+          Добавление метки
           <v-icon class="ml-2">
             mdi-map-marker-down
           </v-icon>
         </h1>
         <v-text-field
-          v-model.trim="editableSubmergedObject.title"
+          v-model.trim="editablePlacemark.title"
           label="Название"
         />
         <v-textarea
-          v-model.trim="editableSubmergedObject.description"
+          v-model.trim="editablePlacemark.description"
           label="Описание"
         />
         <v-btn
           block
           class="mb-4"
-          @click="addSubmergedObject"
+          @click="storePlacemark"
         >
           Сохранить
         </v-btn>
@@ -97,7 +171,7 @@
           Отмена
         </v-btn>
       </template>
-      <!-- Режим добавления курса -->
+      <!-- Добавление / редактирование курса -->
       <template v-if="mode === MODE_ADD_COURSE">
         <h1 class="text-h6 text-center">
           Добавление курса
@@ -123,7 +197,7 @@
         <v-btn
           block
           class="mb-4"
-          @click="addCourse"
+          @click="storeCourse"
         >
           Сохранить
         </v-btn>
@@ -139,6 +213,7 @@
     <v-app-bar
       app
       clipped-left
+      clipped-right
       flat
       dark
     >
@@ -165,7 +240,7 @@
         v-else
         small
         light
-        @click="authDialog = !authDialog"
+        @click="authDialog = true"
       >
         Вход
         <v-icon
@@ -176,6 +251,7 @@
         </v-icon>
       </v-btn>
     </v-app-bar>
+    <!-- Основное содержимое -->
     <v-main>
       <div class="map-wrapper fill-height">
         <!-- Карта -->
@@ -183,8 +259,8 @@
           id="map"
           class="fill-height"
         />
-        <!-- Кнопки управления -->
-        <div class="pa-4 map-actions map-actions--top map-actions--right z-index--big">
+        <!-- Поиск местоположения пользователя -->
+        <div class="map-actions map-actions--top map-actions--right pa-4 z-index--big">
           <v-btn
             small
             @click="getCurrentPosition"
@@ -194,7 +270,8 @@
             </v-icon>
           </v-btn>
         </div>
-        <div class="pa-4 map-actions map-actions--top z-index--big">
+        <!-- Изменение масштаба карты -->
+        <div class="map-actions map-actions--top pa-4 z-index--big">
           <v-btn-toggle small>
             <v-btn
               small
@@ -214,48 +291,55 @@
             </v-btn>
           </v-btn-toggle>
         </div>
-        <div class="pa-4 map-actions map-actions map-actions--bottom z-index--big">
-          <template v-if="mode === MODE_VIEW">
-            <v-btn
+        <!-- Добавление места / метки / курса -->
+        <div
+          v-if="$auth.loggedIn && mode === MODE_VIEW"
+          class="map-actions map-actions--bottom pa-4 z-index--big"
+        >
+          <!-- Добавление места -->
+          <v-btn
+            small
+            color="primary"
+            class="mr-4"
+            @click="enableAddEntryMode(MODE_ADD_DIVE_SITE)"
+          >
+            Добавить место
+            <v-icon
               small
-              color="primary"
-              class="mr-4"
-              @click="onAddEntryMode(MODE_ADD_DIVE_SITE)"
+              class="ml-2"
             >
-              Добавить место
-              <v-icon
-                small
-                class="ml-2"
-              >
-                mdi-map-marker-radius
-              </v-icon>
-            </v-btn>
-            <v-btn
+              mdi-map-marker-radius
+            </v-icon>
+          </v-btn>
+          <!-- Добавление метки -->
+          <v-btn
+            v-if="diveSite"
+            small
+            class="mr-4"
+            @click="enableAddEntryMode(MODE_ADD_PLACEMARK)"
+          >
+            Добавить метку
+            <v-icon
               small
-              class="mr-4"
-              @click="onAddEntryMode(MODE_ADD_SUBMERGED_OBJECT)"
+              class="ml-2"
             >
-              Добавить объект
-              <v-icon
-                small
-                class="ml-2"
-              >
-                mdi-map-marker-down
-              </v-icon>
-            </v-btn>
-            <v-btn
+              mdi-map-marker-down
+            </v-icon>
+          </v-btn>
+          <!-- Добавление курса -->
+          <v-btn
+            v-if="diveSite"
+            small
+            @click="enableAddEntryMode(MODE_ADD_COURSE)"
+          >
+            Добавить курс
+            <v-icon
               small
-              @click="onAddEntryMode(MODE_ADD_COURSE)"
+              class="ml-2"
             >
-              Добавить курс
-              <v-icon
-                small
-                class="ml-2"
-              >
-                mdi-map-marker-distance
-              </v-icon>
-            </v-btn>
-          </template>
+              mdi-map-marker-distance
+            </v-icon>
+          </v-btn>
         </div>
       </div>
     </v-main>
@@ -278,12 +362,12 @@ import {
   MODE_VIEW,
   MODE_DRAW,
   MODE_ADD_DIVE_SITE,
-  MODE_ADD_SUBMERGED_OBJECT,
+  MODE_ADD_PLACEMARK,
   MODE_ADD_COURSE,
   TEMP_MARKER_STUB,
   TEMP_POLYLINE_STUB,
   DIVE_SITE_STUB,
-  SUBMERGED_OBJECT_STUB,
+  PLACEMARK_STUB,
   COURSE_STUB
 } from '~/libs/consts'
 
@@ -302,8 +386,8 @@ const diveSiteMarkerIcon = L.icon({
 /**
  * Иконка объекта
  */
-const submergedObjectMarkerIcon = L.icon({
-  iconUrl: 'submerged-object-marker-icon.png',
+const placemarkMarkerIcon = L.icon({
+  iconUrl: 'placemark-marker-icon.png',
   iconSize: [36, 36]
 })
 
@@ -332,7 +416,7 @@ export default {
 
       MODE_ADD_DIVE_SITE,
 
-      MODE_ADD_SUBMERGED_OBJECT,
+      MODE_ADD_PLACEMARK,
 
       MODE_ADD_COURSE,
 
@@ -340,6 +424,8 @@ export default {
        * Тек. режим
        */
       mode: MODE_VIEW,
+
+      viewMode: null,
 
       /**
        * Панель для работы с записью
@@ -389,17 +475,27 @@ export default {
        */
       editableDiveSite: _.cloneDeep(DIVE_SITE_STUB),
 
+      diveSite: null,
+
       /**
        * Объект
        */
-      editableSubmergedObject: _.cloneDeep(SUBMERGED_OBJECT_STUB),
+      editablePlacemark: _.cloneDeep(PLACEMARK_STUB),
+
+      placemark: null,
 
       /**
        * Курс
        */
       editableCourse: _.cloneDeep(COURSE_STUB),
 
-      authDialog: false
+      course: null,
+
+      authDialog: false,
+
+      backupMarker: null,
+
+      markersMap: {}
     }
   },
 
@@ -442,80 +538,40 @@ export default {
       )
       .addTo(this.map)
 
-    // Отрисовка точек
-    /*
+    // Отрисовка точке
 
-    const { diveSites } = await request(
-      this.$axios,
-      'divesite_getDiveSites',
-      {}
-    )
+    const promises = [
+      request(
+        this.$axios,
+        'divesite_getDiveSites'
+      ),
+      request(
+        this.$axios,
+        'placemark_getPlacemarks'
+      )
+    ]
 
-    const { submergedObjects } = await request(
-      this.$axios,
-      'submergedObject_getSubmergedObjects',
-      {}
-    )
+    const [
+      diveSitesResponse,
+      placemarksResponse,
+    ] = await Promise.all(promises)
 
-    const { courses } = await request(
-      this.$axios,
-      'course_getCourses',
-      {}
-    )
-
-    diveSites.forEach((diveSite) => {
-      L
-        .marker(
-          diveSite.point.location,
-          {
-            icon: diveSiteMarkerIcon
-          }
-        )
-        .bindTooltip(diveSite.title)
-        .addTo(this.map)
+    diveSitesResponse.diveSites.forEach((diveSite) => {
+      this.drawDiveSite(diveSite)
     })
 
-    submergedObjects.forEach((submergedObject) => {
-      L
-        .marker(
-          submergedObject.point.location,
-          {
-            icon: submergedObjectMarkerIcon
-          }
-        )
-        .bindTooltip(submergedObject.title)
-        .addTo(this.map)
+    placemarksResponse.placemarks.forEach((placemark) => {
+      this.drawPlacemark(placemark)
     })
-
-    courses.forEach((course) => {
-      course.points.forEach((point, index) => {
-        const icon = index === 0 ? courseMarkerIconA : courseMarkerIconB
-
-        L
-          .marker(
-            point.location,
-            {
-              icon
-            }
-          )
-          .bindTooltip(course.title)
-          .addTo(this.map)
-      })
-
-      const points = course.points.map(point => point.location)
-
-      L.polyline(points).addTo(this.map)
-    })
-    */
   },
 
   methods: {
     /**
-     * Активация режима добавления места / объекта / курса
+     * Включение режима добавления места / метки / курса
      *
      * @param {number} mode Режим, константа MODE_*
      */
-    onAddEntryMode (mode) {
+    enableAddEntryMode (mode) {
       this.mode = MODE_DRAW
 
       L.DomUtil.addClass(this.map._container, 'cursor--crosshair')
@@ -580,8 +636,8 @@ export default {
             icon = diveSiteMarkerIcon
           }
 
-          if (mode === MODE_ADD_SUBMERGED_OBJECT) {
-            icon = submergedObjectMarkerIcon
+          if (mode === MODE_ADD_PLACEMARK) {
+            icon = placemarkMarkerIcon
           }
 
           // Маркер
@@ -613,6 +669,10 @@ export default {
       })
     },
 
+    enableUpdateEntryMode () {
+
+    },
+
     /**
      * Деактивация режима добавления места / объекта / курса
      */
@@ -637,6 +697,11 @@ export default {
       this.mode = MODE_VIEW
 
       this.entryManagerDrawer = false
+
+      if (this.backupMarker) {
+        this.map.addLayer(this.backupMarker)
+        this.backupMarker = null
+      }
     },
 
     /**
@@ -658,79 +723,156 @@ export default {
       })
     },
 
+    async showDiveSite (id) {
+      const { diveSite } = await request(this.$axios, 'diveSite_getDiveSiteById', { id })
+
+      this.diveSite = diveSite
+
+      this.entryDrawer = true
+
+      this.viewMode = 1
+    },
+
     /**
      * Добавление места
      */
-    async addDiveSite () {
+    async storeDiveSite () {
       const { diveSite } = await request(
         this.$axios,
-        'divesite_addDiveSite',
+        this.editableDiveSite.id ? 'diveSite_updateDiveSiteById' : 'diveSite_addDiveSite',
         {
-          title: this.editableDiveSite.title,
-          description: this.editableDiveSite.description,
-          location: this.tempMarker.marker.getLatLng()
+          dive_site: this.editableDiveSite,
+          location: {
+            lat: this.tempMarker.marker._latlng.lat,
+            lng: this.tempMarker.marker._latlng.lng
+          }
         }
       )
 
-      L
-        .marker(
-          diveSite.point.location,
-          {
-            icon: diveSiteMarkerIcon
-          }
-        )
-        .bindTooltip(diveSite.title)
-        .addTo(this.map)
+      this.diveSite = diveSite
+
+      this.drawDiveSite(diveSite)
 
       this.editableDiveSite = _.cloneDeep(DIVE_SITE_STUB)
 
+      this.backupMarker = null
+
       this.offAddEntryMode()
     },
 
-    async addSubmergedObject () {
-      const { submergedObject } = await request(
+    async showPlacemark (id) {
+      const { placemark } = await request(this.$axios, 'placemark_getPlacemarkById', { id })
+
+      this.placemark = placemark
+
+      this.entryDrawer = true
+
+      this.viewMode = 2
+    },
+
+    async storePlacemark () {
+      const { placemark } = await request(
         this.$axios,
-        'submergedObject_addSubmergedObject',
+        this.editablePlacemark.id ? 'placemark_updatePlacemarkById' : 'placemark_addPlacemark',
         {
-          title: this.editableSubmergedObject.title,
-          description: this.editableSubmergedObject.description,
-          point: this.tempMarker.marker.getLatLng()
+          placemark: {
+            ...this.editablePlacemark,
+            dive_site_id: this.editablePlacemark.dive_site_id || this.diveSite.id,
+            type: 0
+          },
+          location: {
+            lat: this.tempMarker.marker._latlng.lat,
+            lng: this.tempMarker.marker._latlng.lng
+          }
         }
       )
 
-      L
-        .marker(
-          submergedObject.point.location,
-          {
-            icon: submergedObjectMarkerIcon
-          }
-        )
-        .bindTooltip(submergedObject.title)
-        .addTo(this.map)
+      this.placemark = placemark
 
-      this.editableSubmergedObject = _.cloneDeep(SUBMERGED_OBJECT_STUB)
+      this.drawPlacemark(placemark)
+
+      this.editablePlacemark = _.cloneDeep(PLACEMARK_STUB)
 
       this.offAddEntryMode()
     },
 
-    async addCourse () {
+    async storeCourse () {
       const { course } = await request(
         this.$axios,
-        'course_addCourse',
+        this.editableCourse.id ? 'course_updateCourseById' : 'course_addCourse',
         {
           title: this.editableCourse.title,
           description: this.editableCourse.description,
           direction: this.editableCourse.direction,
-          points: this.tempPolyline.markers.map(marker => marker.getLatLng())
+          locations: this.tempPolyline.markers.map(marker => marker.getLatLng())
         }
       )
 
-      course.points.forEach((point, index) => {
+      this.drawCourse(course)
+
+      this.editableCourse = _.cloneDeep(COURSE_STUB)
+
+      this.offAddEntryMode()
+    },
+
+    editDiveSite (id) {
+      const marker = this.markersMap[`divesite_${id}`]
+      this.backupMarker = marker
+      this.tempMarker.marker = L.marker(
+        marker.getLatLng(),
+        {
+          draggable: true,
+          icon: diveSiteMarkerIcon
+        }
+      )
+      this.editableDiveSite = this.diveSite
+      this.map.removeLayer(marker)
+      this.map.addLayer(this.tempMarker.marker)
+      this.mode = MODE_ADD_DIVE_SITE
+      this.entryManagerDrawer = true
+    },
+
+    editPlacemark (id) {
+      const marker = this.markersMap[`placemark_${id}`]
+      this.backupMarker = marker
+      this.tempMarker.marker = L.marker(
+        marker.getLatLng(),
+        {
+          draggable: true,
+          icon: placemarkMarkerIcon
+        }
+      )
+      this.editablePlacemark = this.placemark
+      this.map.removeLayer(marker)
+      this.map.addLayer(this.tempMarker.marker)
+      this.mode = MODE_ADD_PLACEMARK
+      this.entryManagerDrawer = true
+    },
+
+    editCourse (id) {
+      const markers = this.markersMap[`course_${id}`]
+      this.backupMarkers = markers
+      this.tempPolyline.markers = L.marker(
+        markers[0].getLatLng(),
+        {
+          draggable: true,
+          icon: placemarkMarkerIcon
+        }
+      )
+      this.editableCourse = this.course
+      this.map.removeLayer(markers)
+      this.map.addLayer(this.tempPolyline.markers)
+      this.mode = MODE_ADD_COURSE
+      this.entryManagerDrawer = true
+    },
+
+    drawCourse (course) {
+      course.locations.forEach((location, index) => {
         const icon = index === 0 ? courseMarkerIconA : courseMarkerIconB
 
         L
           .marker(
-            point.location,
+            [location.lat, location.lng],
             {
               icon
             }
@@ -739,13 +881,45 @@ export default {
           .addTo(this.map)
       })
 
-      const points = course.points.map(point => point.location)
+      const points = course.locations.map(location => [location.lat, location.lng])
 
       L.polyline(points).addTo(this.map)
+    },
 
-      this.editableCourse = _.cloneDeep(COURSE_STUB)
+    drawDiveSite (diveSite) {
+      const marker = L
+        .marker(
+          [diveSite.location.lat, diveSite.location.lng],
+          {
+            icon: diveSiteMarkerIcon
+          }
+        )
+        .on('click', () => {
+          this.showDiveSite(diveSite.id)
+        })
+        .bindTooltip(diveSite.title)
 
-      this.offAddEntryMode()
+      this.markersMap[`divesite_${diveSite.id}`] = marker
+
+      this.map.addLayer(marker)
+    },
+
+    drawPlacemark (placemark) {
+      const marker = L
+        .marker(
+          [placemark.location.lat, placemark.location.lng],
+          {
+            icon: placemarkMarkerIcon
+          }
+        )
+        .on('click', () => {
+          this.showPlacemark(placemark.id)
+        })
+        .bindTooltip(placemark.title)
+
+      this.markersMap[`placemark_${placemark.id}`] = marker
+
+      this.map.addLayer(marker)
     }
   }
 }

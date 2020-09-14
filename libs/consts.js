@@ -24,7 +24,7 @@ export const MODE_ADD_DIVE_SITE = 2
  *
  * @type {number}
  */
-export const MODE_ADD_SUBMERGED_OBJECT = 3
+export const MODE_ADD_PLACEMARK = 3
 
 /**
  * Режим добавления курса
@@ -77,7 +77,7 @@ export const DIVE_SITE_STUB = {
 /**
  * Объект
  */
-export const SUBMERGED_OBJECT_STUB = {
+export const PLACEMARK_STUB = {
   id: null,
   title: null,
   description: null
@@ -96,7 +96,7 @@ export const COURSE_STUB = {
 /**
  * Точка
  */
-export const POINT_STUB = {
+export const LOCATION_STUB = {
   id: null,
   target_type: null,
   target_id: null,
