@@ -1,8 +1,10 @@
+import type { NuxtConfig } from '@nuxt/types'
+
 import dotenv from 'dotenv'
 
 dotenv.config()
 
-export default {
+const config: NuxtConfig = {
   mode: 'spa',
 
   modules: [
@@ -11,6 +13,8 @@ export default {
   ],
 
   buildModules: [
+    '@nuxt/typescript-build',
+    '@nuxtjs/composition-api',
     '@nuxtjs/vuetify'
   ],
 
@@ -30,10 +34,11 @@ export default {
             url: '/api/v1/user',
             method: 'get'
           },
-
           logout: false
         }
       }
     }
   }
 }
+
+export default config
