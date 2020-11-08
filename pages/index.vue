@@ -12,9 +12,8 @@
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-4">
-          <!-- TODO: Подставлять значение из .env -->
           <v-btn
-            href="http://localhost:8000/auth/vkontakte"
+            :href="`${$axios.defaults.baseURL}/auth/vkontakte`"
             depressed
           >
             <v-icon
@@ -28,7 +27,7 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <!-- Панель для просмотра метки / курса -->
+    <!-- Панель для просмотра метки -->
     <v-navigation-drawer
       v-model="entryDrawer"
       :bottom="$vuetify.breakpoint.smAndDown"
@@ -39,42 +38,50 @@
       class="pa-4 z-index--fix"
     >
       <template v-if="viewMode === VIEW_MODE.PLACEMARK">
-        <div class="mb-4 text-h6">
+        <v-chip
+          disabled
+          outlined
+          label
+        >
+          {{ PLACEMARK_TYPES_MAP[placemark.type].text }}
+        </v-chip>
+        <div class="text-h6 mt-4">
           {{ placemark.title }}
         </div>
-        <div class="mb-4">
+        <div
+          v-if="placemark.description && placemark.description.length"
+          class="mt-4"
+        >
           {{ placemark.description }}
         </div>
-        <div class="mb-4 caption">
-          {{ placemark.location.lat }}, {{ placemark.location.lng }}
+        <div class="caption mt-4">
+          Координаты: {{ placemark.location.lat }}, {{ placemark.location.lng }}
         </div>
         <v-btn
+          v-if="$auth.loggedIn"
           block
           depressed
+          class="mt-4"
           @click="editPlacemark"
         >
           Редактировать
         </v-btn>
-      </template>
-      <template v-if="viewMode === VIEW_MODE.COURSE">
-        <div class="mb-4 text-h6">
-          {{ course.title }}
-        </div>
-        <div class="mb-4">
-          {{ course.description }}
-        </div>
         <v-btn
+          v-if="$auth.loggedIn"
           block
           depressed
-          @click="editCourse"
+          outlined
+          color="warning"
+          class="mt-4"
+          @click="deletePlacemark"
         >
-          Редактировать
+          Удалить ({{ placemarkDeleteConfirmationCount }})
         </v-btn>
       </template>
     </v-navigation-drawer>
-    <!-- Панель для добавления / редактирования метки / курса -->
+    <!-- Панель для добавления / редактирования метки -->
     <v-navigation-drawer
-      v-model="entryManagerDrawer"
+      v-model="editableEntryDrawer"
       :bottom="$vuetify.breakpoint.smAndDown"
       app
       clipped
@@ -82,10 +89,10 @@
       class="pa-4 z-index--fix"
     >
       <!-- Добавление / редактирование метки -->
-      <template v-if="interactionMode === INTERACTION_MODE.MANAGE_PLACEMARK && placemark">
-        <h1 class="mb-4 text-h6">
+      <template v-if="interactionMode === INTERACTION_MODE.EDIT_PLACEMARK">
+        <div class="text-h6 mb-4">
           Добавление метки
-        </h1>
+        </div>
         <v-select
           v-model="placemark.type"
           :items="PLACEMARK_TYPES"
@@ -116,43 +123,6 @@
           block
           depressed
           @click="undoEditPlacemark"
-        >
-          Отмена
-        </v-btn>
-      </template>
-      <template v-if="interactionMode === INTERACTION_MODE.MANAGE_COURSE && course">
-        <h1 class="mb-4 text-h6">
-          Добавление курса
-        </h1>
-        <v-text-field
-          v-model.trim="course.title"
-          filled
-          label="Название"
-        />
-        <v-textarea
-          v-model.trim="course.description"
-          filled
-          label="Описание"
-        />
-        <v-text-field
-          v-model.trim="course.direction"
-          filled
-          type="number"
-          label="Направление"
-        />
-        <v-btn
-          block
-          depressed
-          color="primary"
-          class="mb-4"
-          @click="saveCourse"
-        >
-          Сохранить
-        </v-btn>
-        <v-btn
-          block
-          depressed
-          @click="undoEditCourse"
         >
           Отмена
         </v-btn>
@@ -211,10 +181,14 @@
           class="fill-height"
         />
         <!-- Поиск местоположения пользователя -->
-        <div class="map-actions map-actions--top map-actions--right pa-4 z-index--fix">
+        <div
+          v-if="geolocation"
+          class="map-actions map-actions--top map-actions--right pa-4 z-index--fix"
+        >
           <v-btn
             small
             depressed
+            @click="getCurrentPosition"
           >
             <v-icon small>
               mdi-crosshairs-gps
@@ -244,7 +218,7 @@
             </v-btn>
           </v-btn-toggle>
         </div>
-        <!-- Добавление метки / курса -->
+        <!-- Добавление метки -->
         <div
           v-if="$auth.loggedIn && interactionMode === INTERACTION_MODE.VIEW"
           class="map-actions map-actions--bottom pa-4 z-index--fix"
@@ -254,7 +228,7 @@
             small
             depressed
             class="mr-4"
-            @click="addEntry(INTERACTION_MODE.MANAGE_PLACEMARK)"
+            @click="addEntry(INTERACTION_MODE.EDIT_PLACEMARK)"
           >
             Добавить метку
             <v-icon
@@ -262,21 +236,6 @@
               class="ml-2"
             >
               mdi-map-marker-down
-            </v-icon>
-          </v-btn>
-          <!-- Добавление курса -->
-          <v-btn
-            small
-            depressed
-            class="mr-4"
-            @click="addEntry(INTERACTION_MODE.MANAGE_COURSE)"
-          >
-            Добавить курс
-            <v-icon
-              small
-              class="ml-2"
-            >
-              mdi-map-marker-distance
             </v-icon>
           </v-btn>
         </div>
@@ -289,6 +248,8 @@
     >
       Made with ❤️ by Roman Dynin
     </v-footer>
+    <!-- Сообщения -->
+    <Snackbar />
   </v-app>
 </template>
 
@@ -299,19 +260,18 @@ import _ from 'lodash'
 
 import L from 'leaflet'
 
-import {
-  Course, Location,
+import type {
   Placemark,
-  TempCourseGeometry
+  SnackbarData
 } from '~/types'
 
 import {
   INTERACTION_MODE,
-  PLACEMARK_STUB,
+  VIEW_MODE,
   PLACEMARK_TYPE,
   PLACEMARK_TYPES,
-  COURSE_STUB,
-  VIEW_MODE
+  PLACEMARK_STUB,
+  DELETE_CONFIRMATION_COUNT
 } from '~/libs/constants'
 
 import {
@@ -319,135 +279,96 @@ import {
 } from '~/libs/jsonrpc'
 
 import {
+  placemarkDiveClub,
   placemarkDiveSite,
   placemarkMisc,
   placemarkShore,
   placemarkSubmergedObject
 } from '~/libs/icons'
 
+import Snackbar from '~/components/Snackbar.vue'
+
 export default Vue.extend({
+  components: {
+    Snackbar
+  },
+
   data () {
     return {
-      /**
-       * Режимы взаимодействия
-       */
+      // Режимы взаимодействия
       INTERACTION_MODE,
 
-      /**
-       * Режим взаимодействия
-       */
+      // Режим взаимодействия
       interactionMode: INTERACTION_MODE.VIEW,
 
-      /**
-       * Режимы просмотра
-       */
+      // Режимы просмотра
       VIEW_MODE,
 
-      /**
-       * Режим просмотра
-       */
+      // Режим просмотра
       viewMode: undefined as unknown as VIEW_MODE,
 
-      /**
-       * Карта
-       */
+      // Карта
       map: undefined as unknown as L.Map,
 
-      /**
-       * Координаты центра карты по умолчанию
-       */
+      // Координаты центра карты по умолчанию
       mapCenter: [
-        53.4367995,
-        34.2885255
+        53.2613934,
+        34.395868
       ] as L.LatLngTuple,
 
-      /**
-       * Масштаб карты по умолчанию
-       */
-      mapZoom: 12 as number,
+      // Масштаб карты по умолчанию
+      mapZoom: 10 as number,
 
-      /**
-       * Масштаб карты при просмотре метки или курса
-       */
+      // Масштаб карты при просмотре метки или курса
       mapEntryZoom: 18 as number,
 
-      /**
-       * Маркер для работы с меткой
-       */
-      draggablePlacemarkMarker: undefined as unknown as L.Marker,
-
-      /**
-       * Маркеры и линия для работы с курсом
-       */
-      draggableCourse: undefined as unknown as TempCourseGeometry,
-
-      /**
-       * Слой маркеров меток
-       */
-      placemarksLayerGroup: new L.LayerGroup(),
-
-      /**
-       * Слой маркеров и линий курсов
-       */
-      coursesLayerGroup: new L.LayerGroup(),
-
-      /**
-       * Слой маркеров для работы с метками, маркеров и линий для работы с курсами
-       */
-      draggableLayerGroup: new L.LayerGroup(),
-
-      /**
-       * Диалог авторизации
-       */
+      // Диалог авторизации
       authDialog: false as boolean,
 
-      /**
-       * Панель для просмотра метки или курса
-       */
+      // Панель для просмотра метки или курса
       entryDrawer: false as boolean,
 
-      /**
-       * Панель для работы с меткой или курсом
-       */
-      entryManagerDrawer: false as boolean,
+      // Панель для работы с меткой или курсом
+      editableEntryDrawer: false as boolean,
 
-      /**
-       * Типы метки
-       */
+      // Типы метки
       PLACEMARK_TYPES,
 
-      /**
-       * Метка
-       */
+      // Типы метки
+      PLACEMARK_TYPES_MAP: _.keyBy(PLACEMARK_TYPES, 'value'),
+
+      // Метка
       placemark: undefined as unknown as Placemark,
 
-      /**
-       * Копия метки (для отмены редактирования)
-       */
+      // Копия метки (для отмены редактирования)
       placemarkBackup: undefined as unknown as Placemark,
 
-      /**
-       * Курс
-       */
-      course: undefined as unknown as Course,
+      // Счётчик для подтверждения удаления метки
+      placemarkDeleteConfirmationCount: DELETE_CONFIRMATION_COUNT,
 
-      /**
-       * Копия курса (для отмены редактирования)
-       */
-      courseBackup: undefined as unknown as Course
+      // Маркер метки (для работы)
+      draggablePlacemarkMarker: undefined as unknown as L.Marker,
+
+      // Маркер метки
+      placemarkMarker: undefined as unknown as L.Marker,
+
+      // Слой маркеров меток
+      placemarksLayerGroup: new L.LayerGroup(),
+
+      // Геолокация доступна?
+      geolocation: false
     }
   },
 
   async mounted () {
-    /**
-     * Авторизация
-     */
-    if (this.$route.query.token && !this.$auth.loggedIn) {
+    // Авторизация
+    if (!this.$auth.loggedIn && this.$route.query.token !== undefined) {
       const token: string = Buffer.from(this.$route.query.token.toString(), 'base64').toString()
 
+      // TODO: Проверять token
       await this.$auth.setUserToken(token)
 
-      // TODO: Почему не подтягивается тип?
+      // TODO: Не подтягивается тип для this.$router
       await this.$router.replace({
         query: {
           token: undefined
@@ -455,9 +376,7 @@ export default Vue.extend({
       })
     }
 
-    /**
-     * Карта
-     */
+    // Карта
     this.map = new L
       .Map(
         'map',
@@ -467,190 +386,92 @@ export default Vue.extend({
       )
       .setView(this.mapCenter, this.mapZoom)
 
-    this.map.addLayer(this.placemarksLayerGroup)
+    // Слой OSM
 
-    /**
-     * Слой OSM
-     */
     const OSMLayer = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
 
     this.map.addLayer(OSMLayer)
 
-    /**
-     * Получение меток и курсов
-     */
-    const promises = [
-      request(
+    // Слой меток
+    this.map.addLayer(this.placemarksLayerGroup)
+
+    this.$nextTick(async () => {
+      this.$nuxt.$loading.start()
+
+      // Получение и отрисовка меток
+
+      const placemarks = await request(
         this.$axios,
         'placemark_getPlacemarks',
         {},
         'placemarks'
-      ),
-      request(
-        this.$axios,
-        'course_getCourses',
-        {},
-        'courses'
-      )
-    ]
+      ) as Placemark[]
 
-    const results = await Promise.all(promises)
+      placemarks.forEach((placemark: Placemark) => this.drawPlacemark(placemark))
 
-    /**
-     * Отрисовка меткок
-     */
-    const placemarks = results[0] as Placemark[]
+      this.$nuxt.$loading.finish()
+    })
 
-    placemarks.forEach((placemark: Placemark) => this.drawPlacemark(placemark))
-
-    /**
-     * Отрисовка курсов
-     */
-    const courses = results[1] as Course[]
-
-    courses.forEach((course: Course) => this.drawCourse(course))
+    // Проверка доступности геолокации
+    this.geolocation = !!navigator.geolocation
   },
 
   methods: {
     /**
-     * Добавление метки или курса
+     * Добавление метки
      */
     addEntry (interactionMode: INTERACTION_MODE): void {
       this.interactionMode = INTERACTION_MODE.DRAW
 
       L.DomUtil.addClass(this.map.getContainer(), 'cursor--crosshair')
 
-      this.map.on('click', (event: L.LeafletMouseEvent) => this.getAddEntryMapHandler(interactionMode, event.latlng))
+      this.map.on('click', (event: L.LeafletMouseEvent) => this.getAddEntryHandler(interactionMode, event.latlng))
     },
 
     /**
-     * Получение обработчика клика по карте при добавлении метки или курса
+     * Получение обработчика клика по карте
      */
-    getAddEntryMapHandler (interactionMode: INTERACTION_MODE, latlng: L.LatLng): void {
+    getAddEntryHandler (interactionMode: INTERACTION_MODE, latlng: L.LatLng): void {
       switch (interactionMode) {
-        case INTERACTION_MODE.MANAGE_PLACEMARK:
-          return this.addPlacemarkMapHandler(interactionMode, latlng)
-        case INTERACTION_MODE.MANAGE_COURSE:
-          return this.addCourseMapHandler(interactionMode, latlng)
+        case INTERACTION_MODE.EDIT_PLACEMARK:
+          return this.addPlacemarkHandler(interactionMode, latlng)
         default:
           throw new Error('Invalid interaction mode')
       }
     },
 
     /**
-     * Обработчик клика по карте при добавления метки
+     * Обработчик клика по карте в режиме добавления метки
      */
-    addPlacemarkMapHandler (interactionMode: INTERACTION_MODE, latlng: L.LatLng): void {
+    addPlacemarkHandler (interactionMode: INTERACTION_MODE, latlng: L.LatLng): void {
       this.map.off('click')
 
       L.DomUtil.removeClass(this.map.getContainer(), 'cursor--crosshair')
 
-      this.placemark = _.cloneDeep(PLACEMARK_STUB)
+      const placemark = _.cloneDeep(PLACEMARK_STUB)
 
-      this.drawDraggablePlacemark(this.placemark, latlng)
+      placemark.location.lat = latlng.lat
+
+      placemark.location.lng = latlng.lng
+
+      this.placemark = placemark
+
+      this.drawDraggablePlacemark(this.placemark)
 
       this.map.setView(latlng, this.mapEntryZoom)
 
       this.interactionMode = interactionMode
 
-      this.entryManagerDrawer = true
-    },
-
-    /**
-     * Обработчик клика по карте при добавлении курса
-     */
-    addCourseMapHandler (interactionMode: INTERACTION_MODE, latlng: L.LatLng): void {
-      if (!this.draggableCourse) {
-        this.course = _.cloneDeep(COURSE_STUB)
-
-        this.draggableCourse = {
-          markers: [],
-          polyline: new L.Polyline([latlng])
-        }
-
-        const marker = this.getDraggableCourseMarker(latlng, 0)
-
-        this.draggableCourse.markers.push(marker)
-
-        this.draggableLayerGroup.addLayer(marker)
-
-        return
-      }
-
-      this.map.off('click')
-
-      L.DomUtil.removeClass(this.map.getContainer(), 'cursor--crosshair')
-
-      const marker = this.getDraggableCourseMarker(latlng, 1)
-
-      this.draggableCourse.markers.push(marker)
-
-      this.draggableLayerGroup.addLayer(marker)
-
-      this.draggableCourse.polyline.addLatLng(latlng)
-
-      this.draggableLayerGroup.addLayer(this.draggableCourse.polyline)
-
-      this.interactionMode = interactionMode
-
-      this.entryManagerDrawer = true
-    },
-
-    /**
-     * Получение маркера для работы с курсом
-     */
-    getDraggableCourseMarker (latlng: L.LatLng, index: number): L.Marker {
-      const marker = new L
-        .Marker(
-          latlng,
-          {
-            draggable: true
-          }
-        )
-        .on('add move', () => {
-          this.course.locations[index] = marker.getLatLng()
-        })
-        .on('move', () => {
-          const latlngs = this.draggableCourse.markers.map((marker: L.Marker) => marker.getLatLng())
-
-          this.draggableCourse.polyline.setLatLngs(latlngs)
-        })
-
-      return marker
-    },
-
-    /**
-     * Отрисовка маркеров и линии для работы с курсом
-     */
-    drawDraggableCourse (course: Course): void {
-      const latlngs = course.locations.map((location: Location) => new L.LatLng(
-        location.lat as number,
-        location.lng as number
-      ))
-
-      this.draggableCourse = {
-        markers: [],
-        polyline: new L.Polyline(latlngs)
-      }
-
-      this.draggableLayerGroup.addLayer(this.draggableCourse.polyline)
-
-      latlngs.forEach((latlng: L.LatLng, index: number) => {
-        const marker = this.getDraggableCourseMarker(latlng, index)
-
-        this.draggableCourse.markers.push(marker)
-
-        this.draggableLayerGroup.addLayer(marker)
-      })
+      this.editableEntryDrawer = true
     },
 
     /**
      * Отрисовка маркера для работы меткой
      */
-    drawDraggablePlacemark (placemark: Placemark, latlng?: L.LatLng): void {
+    drawDraggablePlacemark (placemark: Placemark): void {
       this.draggablePlacemarkMarker = new L
         .Marker(
-          latlng || new L.LatLng(
+          new L.LatLng(
             placemark.location.lat as number,
             placemark.location.lng as number
           ),
@@ -659,11 +480,11 @@ export default Vue.extend({
             draggable: true
           }
         )
-        .on('add move', () => {
+        .on('move', () => {
           placemark.location = this.draggablePlacemarkMarker.getLatLng()
         })
 
-      this.draggableLayerGroup.addLayer(this.draggablePlacemarkMarker)
+      this.placemarksLayerGroup.addLayer(this.draggablePlacemarkMarker)
     },
 
     /**
@@ -673,6 +494,8 @@ export default Vue.extend({
       switch (placemark.type) {
         case PLACEMARK_TYPE.MISC:
           return L.icon(placemarkMisc)
+        case PLACEMARK_TYPE.DIVE_CLUB:
+          return L.icon(placemarkDiveClub)
         case PLACEMARK_TYPE.DIVE_SITE:
           return L.icon(placemarkDiveSite)
         case PLACEMARK_TYPE.SHORE:
@@ -707,6 +530,8 @@ export default Vue.extend({
         )
         .bindTooltip(placemark.title)
         .on('click', () => {
+          this.placemarkMarker = marker
+
           this.viewPlacemark(placemark.id as number)
         })
 
@@ -729,6 +554,11 @@ export default Vue.extend({
       this.placemarkBackup = _.cloneDeep(this.placemark)
 
       this.$nuxt.$loading.finish()
+
+      this.$nuxt.$emit('snackbar:show', {
+        color: 'success',
+        text: 'Готово! 🙂'
+      } as SnackbarData)
     },
 
     /**
@@ -746,6 +576,8 @@ export default Vue.extend({
         'placemark'
       ) as Placemark
 
+      this.placemarkDeleteConfirmationCount = DELETE_CONFIRMATION_COUNT
+
       this.viewMode = VIEW_MODE.PLACEMARK
 
       this.entryDrawer = true
@@ -757,145 +589,100 @@ export default Vue.extend({
      * Редактирование метки
      */
     editPlacemark (): void {
-      this.interactionMode = INTERACTION_MODE.MANAGE_PLACEMARK
+      this.$nuxt.$loading.start()
 
-      this.entryManagerDrawer = true
+      this.interactionMode = INTERACTION_MODE.EDIT_PLACEMARK
 
-      // TODO: Удаление основной метки
+      this.editableEntryDrawer = true
+
+      this.placemarksLayerGroup.removeLayer(this.placemarkMarker)
 
       this.drawDraggablePlacemark(this.placemark)
 
+      this.map.setView(this.placemark.location as L.LatLng, this.mapEntryZoom)
+
       this.placemarkBackup = _.cloneDeep(this.placemark)
+
+      this.$nuxt.$loading.finish()
     },
 
     /**
      * Отмена редактирования метки
      */
     undoEditPlacemark (): void {
-      this.draggableLayerGroup.removeLayer(this.draggablePlacemarkMarker)
+      this.$nuxt.$loading.start()
 
-      this.placemark = _.cloneDeep(this.placemarkBackup)
+      this.interactionMode = INTERACTION_MODE.VIEW
+
+      this.editableEntryDrawer = false
+
+      this.placemarksLayerGroup.removeLayer(this.draggablePlacemarkMarker)
 
       this.drawPlacemark(this.placemark)
 
-      this.interactionMode = INTERACTION_MODE.VIEW
-
-      this.entryManagerDrawer = false
-    },
-
-    /**
-     * Отрисовка курса
-     */
-    drawCourse (course: Course): void {
-      const latlngs = course.locations.map((location: Location) => new L.LatLng(
-        location.lat as number,
-        location.lng as number
-      ))
-
-      const layerGroup = new L.LayerGroup()
-
-      layerGroup.course_id = course.id
-
-      latlngs.forEach((latlng) => {
-        const marker = new L
-          .Marker(
-            latlng,
-            {
-            }
-          )
-          .bindTooltip(course.title)
-          .on('click', () => {
-            this.viewCourse(course.id as number)
-          })
-
-        layerGroup.addLayer(marker)
-      })
-
-      const polyline = new L.Polyline(latlngs)
-
-      layerGroup.addLayer(polyline)
-
-      this.coursesLayerGroup.addLayer(layerGroup)
-    },
-
-    /**
-     * Сохранение курса
-     */
-    async saveCourse (): Promise<void> {
-      this.$nuxt.$loading.start()
-
-      this.course = await request(
-        this.$axios,
-        `course_${this.course.id ? 'updateCourseById' : 'addCourse'}`,
-        this.course,
-        'course'
-      ) as Placemark
-
-      this.courseBackup = _.cloneDeep(this.course) as Course
+      this.placemark = _.cloneDeep(this.placemarkBackup)
 
       this.$nuxt.$loading.finish()
     },
 
     /**
-     * Просмотр курса
+     * Удаление метки
      */
-    async viewCourse (id: number): void {
+    async deletePlacemark (): Promise<void> {
+      if (this.placemarkDeleteConfirmationCount !== 0) {
+        this.placemarkDeleteConfirmationCount -= 1
+
+        return
+      }
+
       this.$nuxt.$loading.start()
 
-      this.course = await request(
+      await request(
         this.$axios,
-        'course_getCourseById',
+        'placemark_deletePlacemarkById',
         {
-          id
+          id: this.placemark.id
         },
-        'course'
-      ) as Course
-
-      this.viewMode = VIEW_MODE.COURSE
-
-      this.entryDrawer = true
-
-      this.$nuxt.$loading.finish()
-    },
-
-    /**
-     * Редактирование курса
-     */
-    editCourse (): void {
-      this.interactionMode = INTERACTION_MODE.MANAGE_COURSE
-
-      this.entryManagerDrawer = true
-
-      this.map.eachLayer((layer) => {
-        if (layer.course_id === this.course.id) {
-          this.map.removeLayer(layer)
-        }
-      })
-
-      this.drawDraggableCourse(this.course)
-
-      this.courseBackup = _.cloneDeep(this.course) as Course
-    },
-
-    /**
-     * Отмена редактирования курса
-     */
-    undoEditCourse (): void {
-      this.placemarksLayerGroup.removeLayer(this.draggableCourse.polyline)
-
-      this.draggableCourse.markers.forEach((marker) => this.placemarksLayerGroup.removeLayer(marker))
-
-      this.draggableCourse = undefined
-
-      this.course = _.cloneDeep(this.courseBackup) as Course
-
-      this.courseBackup = undefined
-
-      this.drawCourse(this.course)
+        null
+      )
 
       this.interactionMode = INTERACTION_MODE.VIEW
 
-      this.entryManagerDrawer = false
+      this.entryDrawer = false
+
+      this.editableEntryDrawer = false
+
+      this.placemarksLayerGroup.removeLayer(this.placemarkMarker)
+
+      this.placemarksLayerGroup.removeLayer(this.draggablePlacemarkMarker)
+
+      this.map.setView(this.placemark.location as L.LatLng, this.mapEntryZoom)
+
+      this.$nuxt.$loading.finish()
+
+      this.$nuxt.$emit('snackbar:show', {
+        color: 'success',
+        text: 'Готово! 🙂'
+      } as SnackbarData)
+    },
+
+    getCurrentPosition (): void {
+      this.$nuxt.$emit('snackbar:show', {
+        color: 'info',
+        text: 'Ищем вас ... 🙂'
+      } as SnackbarData)
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.map.setView(new L.LatLng(position.coords.latitude, position.coords.longitude), this.mapZoom)
+        },
+        () => {
+          this.$nuxt.$emit('snackbar:show', {
+            color: 'error',
+            text: 'Не получилось найти вас 😢'
+          } as SnackbarData)
+        }
+      )
     }
   },
 

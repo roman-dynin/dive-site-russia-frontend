@@ -1,6 +1,5 @@
 import {
-  Placemark,
-  Course
+  Placemark
 } from '~/types'
 
 /**
@@ -13,43 +12,42 @@ export enum INTERACTION_MODE {
   VIEW = 0,
 
   /**
-   * “Рисование” геометрии
+   * Рисование геометрии
    */
   DRAW = 1,
 
   /**
    * Добавление / редактирование метки
    */
-  MANAGE_PLACEMARK = 2,
-
-  /**
-   * Добавление / редактирование курса
-   */
-  MANAGE_COURSE = 3
+  EDIT_PLACEMARK = 2
 }
 
 /**
  * Режим просмотра
  */
 export enum VIEW_MODE {
-  PLACEMARK = 0,
-  COURSE = 1
+  PLACEMARK = 0
 }
 
 /**
- * Метка: тип
+ * Тип метки
  */
 export enum PLACEMARK_TYPE {
   MISC = 0,
-  DIVE_SITE = 1,
-  SHORE = 2,
-  SUBMERGED_OBJECT = 3
+  DIVE_CLUB = 1,
+  DIVE_SITE = 2,
+  SHORE = 3,
+  SUBMERGED_OBJECT = 4
 }
 
 export const PLACEMARK_TYPES = [
   {
     value: PLACEMARK_TYPE.MISC,
     text: 'Разное'
+  },
+  {
+    value: PLACEMARK_TYPE.DIVE_CLUB,
+    text: 'Дайвинг-клуб'
   },
   {
     value: PLACEMARK_TYPE.DIVE_SITE,
@@ -80,12 +78,6 @@ export const PLACEMARK_STUB: Placemark = {
 }
 
 /**
- * Курс
+ * Кол-во подтверждений удаления
  */
-export const COURSE_STUB: Course = {
-  id: null,
-  title: '',
-  description: null,
-  direction: 0,
-  locations: []
-}
+export const DELETE_CONFIRMATION_COUNT = 3

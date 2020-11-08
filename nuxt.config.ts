@@ -5,7 +5,9 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const config: NuxtConfig = {
-  mode: 'spa',
+  ssr: false,
+
+  loading: '@/components/Preloader.vue',
 
   modules: [
     '@nuxtjs/axios',
@@ -14,7 +16,6 @@ const config: NuxtConfig = {
 
   buildModules: [
     '@nuxt/typescript-build',
-    '@nuxtjs/composition-api',
     '@nuxtjs/vuetify'
   ],
 

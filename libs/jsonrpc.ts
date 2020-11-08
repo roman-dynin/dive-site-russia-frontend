@@ -5,10 +5,12 @@ import {
 /**
  * JSON RPC запрос
  *
- * @param axios
- * @param method
- * @param params
- * @param extractByKey
+ * @param  {NuxtAxiosInstance} axios
+ * @param  {string} method
+ * @param  {object} params
+ * @param  {(string|null)} extractByKey
+ *
+ * @return {*}
  */
 export const request = async (
   axios: NuxtAxiosInstance,

@@ -1,11 +1,9 @@
-import L from 'leaflet'
-
 /**
  * Местоположение
  */
 export interface Location {
-  lat: number | null,
-  lng: number | null
+  lat: number | null;
+  lng: number | null;
 }
 
 /**
@@ -20,17 +18,9 @@ export interface Placemark {
 }
 
 /**
- * Курс
+ * Сообщение
  */
-export interface Course {
-  id: number | null,
-  title: string,
-  description: string | null,
-  direction: number,
-  locations: Location[]
-}
-
-export interface TempCourseGeometry {
-  markers: L.Marker[]
-  polyline: L.Polyline
+export interface SnackbarData {
+  color: string,
+  text: string
 }

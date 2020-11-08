@@ -28,7 +28,8 @@
       "@types/leaflet",
       "@nuxt/types",
       "@nuxtjs/axios",
-      "@types/nuxtjs__auth"
+      "@types/nuxtjs__auth",
+      "@types"
     ]
   },
   "exclude": [
