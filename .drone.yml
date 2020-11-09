@@ -10,21 +10,21 @@ trigger:
   branch:
     - master
 
+clone:
+  disable: true
+
 steps:
 
-  - name: build
+  - name: pull
     environment:
-      DIVE_SITE_RUSSIA_DEPLOY_PATH:
-        from_secret: dive-site-russia-deploy-path
       DIVE_SITE_RUSSIA_FRONTEND_PATH:
         from_secret: dive-site-russia-frontend-path
     commands:
-      - cp $${DIVE_SITE_RUSSIA_FRONTEND_PATH}/.env .env
-      - docker build --tag dive-site-russia-frontend .
+      - cd $${DIVE_SITE_RUSSIA_FRONTEND_PATH} && git pull
 
   - name: recreate
     environment:
       DIVE_SITE_RUSSIA_DEPLOY_PATH:
         from_secret: dive-site-russia-deploy-path
     commands:
-      - docker-compose -f $${DIVE_SITE_RUSSIA_DEPLOY_PATH}/docker-compose.yml up -d --force-recreate --remove-orphans --no-deps frontend
+      - docker-compose -f $${DIVE_SITE_RUSSIA_DEPLOY_PATH}/docker-compose.yml up -d --build --no-deps frontend
