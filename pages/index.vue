@@ -246,7 +246,7 @@
       app
       dark
     >
-      Made with ❤️ by Roman Dynin Olegovich
+      Made with ❤️ by Roman Dynin
     </v-footer>
     <!-- Сообщения -->
     <Snackbar />
