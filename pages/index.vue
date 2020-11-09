@@ -139,7 +139,7 @@
       <v-icon class="mr-2">
         mdi-diving-flippers
       </v-icon>
-      <v-toolbar-title>diving-map.io</v-toolbar-title>
+      <v-toolbar-title>diving.site</v-toolbar-title>
       <v-spacer />
       <v-btn
         v-if="$auth.loggedIn"
