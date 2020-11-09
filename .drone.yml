@@ -15,7 +15,10 @@ steps:
     environment:
       DIVE_SITE_RUSSIA_DEPLOY_PATH:
         from_secret: dive-site-russia-deploy-path
+      DIVE_SITE_RUSSIA_FRONTEND_PATH:
+        from_secret: dive-site-russia-frontend-path
     commands:
+      - source $${DIVE_SITE_RUSSIA_FRONTEND_PATH}/.env
       - docker build --tag dive-site-russia-frontend .
   - name: recreate
     environment:
