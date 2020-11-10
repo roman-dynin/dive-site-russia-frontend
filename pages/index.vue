@@ -245,6 +245,7 @@
     <v-footer
       app
       dark
+      class="z-index--fix"
     >
       Made with ❤️ by Roman Dynin
     </v-footer>
