@@ -699,7 +699,7 @@ export default Vue.extend({
 
 .z-index--fix
 {
-  z-index: 1001;
+  z-index: 1001 !important;
 }
 
 .cursor--crosshair
