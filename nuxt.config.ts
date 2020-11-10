@@ -7,6 +7,15 @@ dotenv.config()
 const config: NuxtConfig = {
   ssr: false,
 
+  head: {
+    meta: [
+      {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1'
+      }
+    ]
+  },
+
   loading: '@/components/Preloader.vue',
 
   modules: [
