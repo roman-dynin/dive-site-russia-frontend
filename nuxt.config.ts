@@ -16,6 +16,12 @@ const config: NuxtConfig = {
         name: 'viewport',
         content: 'initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, width=device-width, height=device-height'
       }
+    ],
+    link: [
+      {
+        rel: 'manifest',
+        href: 'site.webmanifest'
+      }
     ]
   },
 

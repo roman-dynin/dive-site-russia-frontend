@@ -251,7 +251,7 @@
       dark
     >
       <v-icon class="mr-2">
-        mdi-diving-flippers
+        mdi-diving-scuba
       </v-icon>
       <v-toolbar-title>diving.place</v-toolbar-title>
       <v-spacer />
@@ -545,6 +545,8 @@ export default Vue.extend({
     calcVerticalHeight()
 
     window.addEventListener('resize', () => calcVerticalHeight())
+
+    window.addEventListener('orientationchange', () => calcVerticalHeight())
 
     // Авторизация
     if (!this.$auth.loggedIn && this.$route.query.token !== undefined) {
