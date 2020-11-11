@@ -247,7 +247,7 @@
     <!-- Шапка -->
     <v-app-bar
       app
-      absolute
+      fixed
       flat
       dark
     >
