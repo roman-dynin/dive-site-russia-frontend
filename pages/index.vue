@@ -45,99 +45,107 @@
         flat
         tile
       >
-        <v-card-title class="pa-4 text-no-wrap">
-          <template v-if="placemark.title">
-            {{ placemark.title }}
-          </template>
-          <span
-            v-else
-            class="grey--text"
+        <v-card-title class="pa-4">
+          <v-row
+            justify="space-between"
+            no-gutters
           >
-            Без названия
-          </span>
-          <v-spacer />
-          <v-tooltip
-            v-if="interactionMode === INTERACTION_MODE.VIEW_PLACEMARK"
-            top
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                v-if="$auth.loggedIn"
-                :small="$vuetify.breakpoint.mdAndUp"
-                icon
-                color="info"
-                class="mr-4"
-                v-bind="attrs"
-                v-on="on"
-                @click="editPlacemark"
+            <v-col cols="auto">
+              <template v-if="placemark.title">
+                {{ placemark.title }}
+              </template>
+              <span
+                v-else
+                class="grey--text"
               >
-                <v-icon :small="$vuetify.breakpoint.mdAndUp">
-                  mdi-pencil
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>Редактировать</span>
-          </v-tooltip>
-          <v-tooltip
-            v-if="interactionMode === INTERACTION_MODE.EDIT_PLACEMARK && placemark.id"
-            top
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                v-if="$auth.loggedIn"
-                :small="$vuetify.breakpoint.mdAndUp"
-                icon
-                color="info"
-                class="mr-4"
-                v-bind="attrs"
-                v-on="on"
-                @click="undoEditPlacemark"
+                Без названия
+              </span>
+            </v-col>
+            <v-col cols="auto">
+              <v-tooltip
+                v-if="interactionMode === INTERACTION_MODE.VIEW_PLACEMARK"
+                top
               >
-                <v-icon :small="$vuetify.breakpoint.mdAndUp">
-                  mdi-pencil-remove
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>Отменить редактирование</span>
-          </v-tooltip>
-          <v-tooltip
-            v-if="placemark.id"
-            top
-          >
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                v-if="$auth.loggedIn"
-                :small="$vuetify.breakpoint.mdAndUp"
-                icon
-                color="warning"
-                class="mr-4"
-                v-bind="attrs"
-                v-on="on"
-                @click="deletePlacemark"
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="$auth.loggedIn"
+                    :small="$vuetify.breakpoint.mdAndUp"
+                    icon
+                    color="info"
+                    class="mr-4"
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="editPlacemark"
+                  >
+                    <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                      mdi-pencil
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>Редактировать</span>
+              </v-tooltip>
+              <v-tooltip
+                v-if="interactionMode === INTERACTION_MODE.EDIT_PLACEMARK && placemark.id"
+                top
               >
-                <v-icon :small="$vuetify.breakpoint.mdAndUp">
-                  mdi-delete
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>Удалить</span>
-          </v-tooltip>
-          <v-tooltip top>
-            <template v-slot:activator="{ on, attrs }">
-              <v-btn
-                :small="$vuetify.breakpoint.mdAndUp"
-                icon
-                v-bind="attrs"
-                v-on="on"
-                @click="closePlacemark"
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="$auth.loggedIn"
+                    :small="$vuetify.breakpoint.mdAndUp"
+                    icon
+                    color="info"
+                    class="mr-4"
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="undoEditPlacemark"
+                  >
+                    <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                      mdi-pencil-remove
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>Отменить редактирование</span>
+              </v-tooltip>
+              <v-tooltip
+                v-if="placemark.id"
+                top
               >
-                <v-icon :small="$vuetify.breakpoint.mdAndUp">
-                  mdi-close
-                </v-icon>
-              </v-btn>
-            </template>
-            <span>Закрыть</span>
-          </v-tooltip>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    v-if="$auth.loggedIn"
+                    :small="$vuetify.breakpoint.mdAndUp"
+                    icon
+                    color="warning"
+                    class="mr-4"
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="deletePlacemark"
+                  >
+                    <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                      mdi-delete
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>Удалить</span>
+              </v-tooltip>
+              <v-tooltip top>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    :small="$vuetify.breakpoint.mdAndUp"
+                    icon
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="closePlacemark"
+                  >
+                    <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                      mdi-close
+                    </v-icon>
+                  </v-btn>
+                </template>
+                <span>Закрыть</span>
+              </v-tooltip>
+            </v-col>
+          </v-row>
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-4">
@@ -477,7 +485,15 @@ export default Vue.extend({
      * Ширина панели метки
      */
     $placemarkBottomSheetWidthPercents (): number {
-      return this.$vuetify.breakpoint.smAndDown ? 100 : 30
+      if (this.$vuetify.breakpoint.smAndDown) {
+        return 100
+      }
+
+      if (this.$vuetify.breakpoint.mdAndDown) {
+        return 40
+      }
+
+      return 30
     },
 
     /**
