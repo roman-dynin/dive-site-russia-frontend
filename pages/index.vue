@@ -651,9 +651,13 @@ export default Vue.extend({
 
       this.placemarkMarker = marker
 
-      this.mapPreviousCenter = this.map.getCenter() as L.LatLng
+      if (!this.placemark) {
+        // Если уже открыта какая-то метка, то центр и масштаб карты сохранять не нужно
 
-      this.mapPreviousZoom = this.map.getZoom()
+        this.mapPreviousCenter = this.map.getCenter() as L.LatLng
+
+        this.mapPreviousZoom = this.map.getZoom()
+      }
 
       this.setViewWithOffset(this.placemark.location as L.LatLng, this.mapPlacemarkZoom)
 
