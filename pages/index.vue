@@ -45,7 +45,7 @@
         flat
         tile
       >
-        <v-card-title class="pa-4">
+        <v-card-title class="pa-4 text-no-wrap">
           <template v-if="placemark.title">
             {{ placemark.title }}
           </template>
@@ -239,6 +239,7 @@
     <!-- Шапка -->
     <v-app-bar
       app
+      absolute
       flat
       dark
     >
