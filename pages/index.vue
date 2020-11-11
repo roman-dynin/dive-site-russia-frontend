@@ -288,7 +288,6 @@
     </v-app-bar>
     <!-- Основное содержимое -->
     <v-main>
-
       <!-- Карта -->
       <div
         id="map"
@@ -535,6 +534,13 @@ export default Vue.extend({
   },
 
   async mounted () {
+    // Исправление проблемы с 100vh на моб. устройствах
+    if (typeof window.orientation !== 'undefined') {
+      const element = document.getElementsByClassName('v-application--wrap')[0]
+
+      element.classList.add('min-height--fix')
+    }
+
     // Авторизация
     if (!this.$auth.loggedIn && this.$route.query.token !== undefined) {
       const token: string = Buffer.from(this.$route.query.token.toString(), 'base64').toString()
@@ -573,9 +579,26 @@ export default Vue.extend({
 
     // Слой OSM
 
-    const OSMLayer = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
+    // const OSMLayer = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png')
 
-    this.map.addLayer(OSMLayer)
+    // this.map.addLayer(OSMLayer)
+
+    // Слой Google (Гибридный)
+
+    const GoogleHybridLayer = new L.TileLayer(
+      'http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',
+      {
+        maxZoom: 20,
+        subdomains: [
+          'mt0',
+          'mt1',
+          'mt2',
+          'mt3'
+        ]
+      }
+    )
+
+    this.map.addLayer(GoogleHybridLayer)
 
     // Слой меток
     this.map.addLayer(this.mapPlacemarksLayerGroup)
@@ -978,6 +1001,12 @@ export default Vue.extend({
 .v-btn
 {
   touch-action: manipulation;
+}
+
+.min-height--fix
+{
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 .z-index--fix
