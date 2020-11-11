@@ -535,7 +535,7 @@ export default Vue.extend({
 
   async mounted () {
     // Исправление проблемы с 100vh на моб. устройствах
-    if (typeof window.orientation !== 'undefined') {
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
       const element = document.getElementsByClassName('v-application--wrap')[0]
 
       element.classList.add('min-height--fix')
