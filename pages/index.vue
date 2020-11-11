@@ -371,6 +371,8 @@ import _ from 'lodash'
 
 import L from 'leaflet'
 
+import 'leaflet.markercluster'
+
 import type {
   Location,
   Placemark,
@@ -439,7 +441,11 @@ export default Vue.extend({
       mapEditablePlacemarkZoom: 16 as number,
 
       // Слой маркеров меток
-      mapPlacemarksLayerGroup: new L.LayerGroup(),
+      mapPlacemarksLayerGroup: new L.MarkerClusterGroup({
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: false,
+        maxClusterRadius: 20
+      }),
 
       // Типы метки
       PLACEMARK_TYPES,
@@ -968,6 +974,8 @@ export default Vue.extend({
 
 <style lang="css">
 @import 'node_modules/leaflet/dist/leaflet.css';
+@import 'node_modules/leaflet.markercluster/dist/MarkerCluster.css';
+@import 'node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 .z-index--fix
 {
