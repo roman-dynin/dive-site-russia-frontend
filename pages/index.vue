@@ -977,6 +977,11 @@ export default Vue.extend({
 @import 'node_modules/leaflet.markercluster/dist/MarkerCluster.css';
 @import 'node_modules/leaflet.markercluster/dist/MarkerCluster.Default.css';
 
+.v-btn
+{
+  touch-action: manipulation;
+}
+
 .z-index--fix
 {
   z-index: 1001 !important;
