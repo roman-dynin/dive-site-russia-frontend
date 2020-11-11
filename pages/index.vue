@@ -534,12 +534,17 @@ export default Vue.extend({
   },
 
   async mounted () {
-    // Исправление проблемы с 100vh на моб. устройствах
-    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-      const element = document.getElementsByClassName('v-application--wrap')[0]
+    // Код для исправление проблемы с 100vh на моб. устройствах
 
-      element.classList.add('min-height--fix')
+    const calcVerticalHeight = (): void => {
+      const vh = window.innerHeight * 0.01
+
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
     }
+
+    calcVerticalHeight()
+
+    window.addEventListener('resize', () => calcVerticalHeight())
 
     // Авторизация
     if (!this.$auth.loggedIn && this.$route.query.token !== undefined) {
@@ -1003,10 +1008,10 @@ export default Vue.extend({
   touch-action: manipulation;
 }
 
-.min-height--fix
+.v-application--wrap
 {
   min-height: 100vh;
-  min-height: -webkit-fill-available;
+  min-height: calc(var(--vh, 1vh) * 100);
 }
 
 .z-index--fix
