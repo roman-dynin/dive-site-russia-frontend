@@ -343,7 +343,7 @@
             :small="$vuetify.breakpoint.mdAndUp"
             class="ml-2"
           >
-            mdi-map-marker-down
+            mdi-plus
           </v-icon>
         </v-btn>
       </div>
@@ -370,13 +370,7 @@ import L from 'leaflet'
 
 import 'leaflet.markercluster'
 
-import type {
-  Location,
-  Placemark,
-  PlacemarksMarkersReferencesMap,
-  Query,
-  SnackbarData
-} from '~/types'
+import type {Location, Placemark, PlacemarksMarkersReferencesMap, Query, SnackbarData} from '~/types'
 
 import {
   DELETE_CONFIRMATION_COUNT,
@@ -386,9 +380,7 @@ import {
   PLACEMARK_TYPES
 } from '~/libs/constants'
 
-import {
-  request
-} from '~/libs/jsonrpc'
+import {request} from '~/libs/jsonrpc'
 
 import {
   placemarkDiveClub,
@@ -426,16 +418,16 @@ export default Vue.extend({
       mapPreviousCenter: undefined as unknown as L.LatLng,
 
       // Масштаб карты по умолчанию
-      mapDefaultZoom: 10 as number,
+      mapDefaultZoom: 12 as number,
 
       // Предыдущий масштаб карты
       mapPreviousZoom: undefined as unknown as number,
 
       // Масштаб карты при просмотре метки
-      mapPlacemarkZoom: 15 as number,
+      mapPlacemarkZoom: 17 as number,
 
       // Масштаб карты при добавлении / редактировании метки
-      mapEditablePlacemarkZoom: 16 as number,
+      mapEditablePlacemarkZoom: 18 as number,
 
       // Слой маркеров меток
       mapPlacemarksLayerGroup: new L.MarkerClusterGroup({
@@ -640,6 +632,11 @@ export default Vue.extend({
       L.DomUtil.addClass(this.map.getContainer(), 'cursor--crosshair')
 
       this.interactionMode = INTERACTION_MODE.DRAW_MAP
+
+      this.$nuxt.$emit('snackbar:show', {
+        color: 'success',
+        text: 'Кликните по карте 👆'
+      } as SnackbarData)
     },
 
     /**
@@ -685,9 +682,13 @@ export default Vue.extend({
      * Просмотр метки
      */
     async viewPlacemark (id: number, marker: L.Marker): Promise<void> {
-      if (!this.placemark) {
-        // Если уже открыта какая-то метка, то центр и масштаб карты сохранять не нужно
+      // Отмена редактирования метки перед просмотром другой метки
+      if (this.placemark && this.interactionMode === INTERACTION_MODE.EDIT_PLACEMARK) {
+        this.undoEditPlacemark()
+      }
 
+      // Если уже открыта какая-то метка, то центр и масштаб карты сохранять не нужно
+      if (!this.placemark) {
         this.mapPreviousCenter = this.map.getCenter() as L.LatLng
 
         this.mapPreviousZoom = this.map.getZoom()
@@ -830,7 +831,7 @@ export default Vue.extend({
 
         this.$nuxt.$emit('snackbar:show', {
           color: 'warning',
-          text: 'Нажмите ещё несколько раз ...'
+          text: 'Нажмите ещё раз ... ☝️'
         } as SnackbarData)
 
         return
@@ -876,7 +877,7 @@ export default Vue.extend({
     getCurrentPosition (): void {
       this.$nuxt.$emit('snackbar:show', {
         color: 'info',
-        text: 'Ищем вас ... 🙂'
+        text: 'Ищем вас ... 🔍'
       } as SnackbarData)
 
       navigator.geolocation.getCurrentPosition(
@@ -891,7 +892,7 @@ export default Vue.extend({
         () => {
           this.$nuxt.$emit('snackbar:show', {
             color: 'error',
-            text: 'Не получилось найти вас 😢'
+            text: 'Не получилось ... 😢'
           } as SnackbarData)
         }
       )
