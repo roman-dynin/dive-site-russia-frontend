@@ -9,24 +9,22 @@ export enum INTERACTION_MODE {
   /**
    * Просмотр карты
    */
-  VIEW = 0,
+  VIEW_MAP = 1,
 
   /**
-   * Рисование геометрии
+   * Рисование карты
    */
-  DRAW = 1,
+  DRAW_MAP = 2,
+
+  /**
+   * Просмотр метки
+   */
+  VIEW_PLACEMARK = 3,
 
   /**
    * Добавление / редактирование метки
    */
-  EDIT_PLACEMARK = 2
-}
-
-/**
- * Режим просмотра
- */
-export enum VIEW_MODE {
-  PLACEMARK = 0
+  EDIT_PLACEMARK = 4
 }
 
 /**
@@ -40,26 +38,34 @@ export enum PLACEMARK_TYPE {
   SUBMERGED_OBJECT = 4
 }
 
+/**
+ * Типы меток
+ */
 export const PLACEMARK_TYPES = [
   {
     value: PLACEMARK_TYPE.MISC,
-    text: 'Разное'
+    text: 'Разное',
+    color: 'light-green'
   },
   {
     value: PLACEMARK_TYPE.DIVE_CLUB,
-    text: 'Дайвинг-клуб'
+    text: 'Дайвинг-клуб',
+    color: 'yellow darken-4'
   },
   {
     value: PLACEMARK_TYPE.DIVE_SITE,
-    text: 'Место погружения'
+    text: 'Место погружения',
+    color: 'light-blue darken-4'
   },
   {
     value: PLACEMARK_TYPE.SHORE,
-    text: 'Берег'
+    text: 'Берег',
+    color: 'green darken-4'
   },
   {
     value: PLACEMARK_TYPE.SUBMERGED_OBJECT,
-    text: 'Затопленный объект'
+    text: 'Затопленный объект',
+    color: 'black'
   }
 ]
 
@@ -68,16 +74,14 @@ export const PLACEMARK_TYPES = [
  */
 export const PLACEMARK_STUB: Placemark = {
   id: null,
+  user_id: null,
   type: PLACEMARK_TYPE.MISC,
   title: '',
   description: null,
-  location: {
-    lat: null,
-    lng: null
-  }
+  created_at: null
 }
 
 /**
- * Кол-во подтверждений удаления
+ * Кол-во подтверждений для удаления
  */
 export const DELETE_CONFIRMATION_COUNT = 3

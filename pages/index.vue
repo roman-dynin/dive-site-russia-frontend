@@ -27,112 +27,218 @@
         </v-card-text>
       </v-card>
     </v-dialog>
-    <!-- Панель для просмотра метки -->
-    <v-navigation-drawer
-      v-model="entryDrawer"
-      :bottom="$vuetify.breakpoint.smAndDown"
-      app
-      clipped
-      right
-      width="500px"
-      class="pa-4 z-index--fix"
+    <!-- Панель метки -->
+    <v-bottom-sheet
+      v-model="placemarkBottomSheet"
+      :retain-focus="false"
+      :width="`${$placemarkBottomSheetWidthPercents}%`"
+      persistent
+      no-click-animation
+      scrollable
+      inset
+      hide-overlay
+      class="z-index--fix"
     >
-      <template v-if="viewMode === VIEW_MODE.PLACEMARK">
-        <v-chip
-          disabled
-          outlined
-          label
-        >
-          {{ PLACEMARK_TYPES_MAP[placemark.type].text }}
-        </v-chip>
-        <div class="text-h6 mt-4">
-          {{ placemark.title }}
-        </div>
-        <div
-          v-if="placemark.description && placemark.description.length"
-          class="mt-4"
-        >
-          {{ placemark.description }}
-        </div>
-        <div class="caption mt-4">
-          Координаты: {{ placemark.location.lat }}, {{ placemark.location.lng }}
-        </div>
-        <v-btn
-          v-if="$auth.loggedIn"
-          block
-          depressed
-          class="mt-4"
-          @click="editPlacemark"
-        >
-          Редактировать
-        </v-btn>
-        <v-btn
-          v-if="$auth.loggedIn"
-          block
-          depressed
-          outlined
-          color="warning"
-          class="mt-4"
-          @click="deletePlacemark"
-        >
-          Удалить ({{ placemarkDeleteConfirmationCount }})
-        </v-btn>
-      </template>
-    </v-navigation-drawer>
-    <!-- Панель для добавления / редактирования метки -->
-    <v-navigation-drawer
-      v-model="editableEntryDrawer"
-      :bottom="$vuetify.breakpoint.smAndDown"
-      app
-      clipped
-      width="500px"
-      class="pa-4 z-index--fix"
-    >
-      <!-- Добавление / редактирование метки -->
-      <template v-if="interactionMode === INTERACTION_MODE.EDIT_PLACEMARK">
-        <div class="text-h6 mb-4">
-          Добавление метки
-        </div>
-        <v-select
-          v-model="placemark.type"
-          :items="PLACEMARK_TYPES"
-          filled
-          label="Тип"
-          @input="onChangePlacemarkTypeHandler"
-        />
-        <v-text-field
-          v-model.trim="placemark.title"
-          filled
-          label="Название"
-        />
-        <v-textarea
-          v-model.trim="placemark.description"
-          filled
-          label="Описание"
-        />
-        <v-btn
-          block
-          depressed
-          color="primary"
-          class="mb-4"
-          @click="savePlacemark"
-        >
-          Сохранить
-        </v-btn>
-        <v-btn
-          block
-          depressed
-          @click="undoEditPlacemark"
-        >
-          Отмена
-        </v-btn>
-      </template>
-    </v-navigation-drawer>
+      <v-card
+        v-if="placemark"
+        :height="`${$placemarkBottomSheetHeightPixels}px`"
+        flat
+        tile
+      >
+        <v-card-title class="pa-4">
+          <template v-if="placemark.title">
+            {{ placemark.title }}
+          </template>
+          <span
+            v-else
+            class="grey--text"
+          >
+            Без названия
+          </span>
+          <v-spacer />
+          <v-tooltip
+            v-if="interactionMode === INTERACTION_MODE.VIEW_PLACEMARK"
+            top
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-if="$auth.loggedIn"
+                :small="$vuetify.breakpoint.mdAndUp"
+                icon
+                color="info"
+                class="mr-4"
+                v-bind="attrs"
+                v-on="on"
+                @click="editPlacemark"
+              >
+                <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                  mdi-pencil
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Редактировать</span>
+          </v-tooltip>
+          <v-tooltip
+            v-if="interactionMode === INTERACTION_MODE.EDIT_PLACEMARK && placemark.id"
+            top
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-if="$auth.loggedIn"
+                :small="$vuetify.breakpoint.mdAndUp"
+                icon
+                color="info"
+                class="mr-4"
+                v-bind="attrs"
+                v-on="on"
+                @click="undoEditPlacemark"
+              >
+                <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                  mdi-pencil-remove
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Отменить редактирование</span>
+          </v-tooltip>
+          <v-tooltip
+            v-if="placemark.id"
+            top
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                v-if="$auth.loggedIn"
+                :small="$vuetify.breakpoint.mdAndUp"
+                icon
+                color="warning"
+                class="mr-4"
+                v-bind="attrs"
+                v-on="on"
+                @click="deletePlacemark"
+              >
+                <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                  mdi-delete
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Удалить</span>
+          </v-tooltip>
+          <v-tooltip top>
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                :small="$vuetify.breakpoint.mdAndUp"
+                icon
+                v-bind="attrs"
+                v-on="on"
+                @click="closePlacemark"
+              >
+                <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                  mdi-close
+                </v-icon>
+              </v-btn>
+            </template>
+            <span>Закрыть</span>
+          </v-tooltip>
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-4">
+          <template v-if="interactionMode === INTERACTION_MODE.VIEW_PLACEMARK">
+            <div
+              v-if="placemark.description"
+              class="mb-4"
+            >
+              {{ placemark.description }}
+            </div>
+            <v-chip
+              :small="$vuetify.breakpoint.mdAndUp"
+              :color="PLACEMARK_TYPES_MAP[placemark.type].color"
+              disabled
+              outlined
+              label
+              class="mb-4"
+            >
+              {{ PLACEMARK_TYPES_MAP[placemark.type].text }}
+            </v-chip>
+            <div
+              :class="{
+                caption: $vuetify.breakpoint.mdAndUp
+              }"
+              class="mb-4"
+            >
+              <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                mdi-compass-outline
+              </v-icon>
+              {{ placemark.location.lat }}, {{ placemark.location.lng }}
+            </div>
+            <!--
+            <div
+              :class="{
+                caption: $vuetify.breakpoint.mdAndUp
+              }"
+              class="mb-4"
+             >
+              <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                mdi-swap-vertical
+              </v-icon>
+              м.
+            </div>
+            -->
+            <div
+              :class="{
+                caption: $vuetify.breakpoint.mdAndUp
+              }"
+              class="mb-4"
+            >
+              <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                mdi-account
+              </v-icon>
+              {{ placemark.user.nickname }}
+            </div>
+            <div
+              :class="{
+                caption: $vuetify.breakpoint.mdAndUp
+              }"
+              class="mb-4"
+            >
+              <v-icon :small="$vuetify.breakpoint.mdAndUp">
+                mdi-calendar-range
+              </v-icon>
+              {{ placemark.created_at }}
+            </div>
+          </template>
+          <template v-if="interactionMode === INTERACTION_MODE.EDIT_PLACEMARK">
+            <v-select
+              v-model="placemark.type"
+              :items="PLACEMARK_TYPES"
+              filled
+              label="Тип"
+              @input="onChangePlacemarkTypeHandler"
+            />
+            <v-text-field
+              v-model.trim="placemark.title"
+              filled
+              label="Название"
+            />
+            <v-textarea
+              v-model.trim="placemark.description"
+              filled
+              label="Описание"
+            />
+            <v-btn
+              block
+              depressed
+              color="primary"
+              class="mb-4"
+              @click="savePlacemark"
+            >
+              Сохранить
+            </v-btn>
+          </template>
+        </v-card-text>
+      </v-card>
+    </v-bottom-sheet>
     <!-- Шапка -->
     <v-app-bar
       app
-      clipped-left
-      clipped-right
       flat
       dark
     >
@@ -143,14 +249,14 @@
       <v-spacer />
       <v-btn
         v-if="$auth.loggedIn"
-        small
+        :small="$vuetify.breakpoint.mdAndUp"
         light
         depressed
         @click="$auth.logout()"
       >
         Выход
         <v-icon
-          small
+          :small="$vuetify.breakpoint.mdAndUp"
           class="ml-2"
         >
           mdi-logout-variant
@@ -158,14 +264,14 @@
       </v-btn>
       <v-btn
         v-else
-        small
+        :small="$vuetify.breakpoint.mdAndUp"
         light
         depressed
         @click="authDialog = true"
       >
         Вход
         <v-icon
-          small
+          :small="$vuetify.breakpoint.mdAndUp"
           class="ml-2"
         >
           mdi-login-variant
@@ -181,38 +287,35 @@
           class="fill-height"
         />
         <!-- Поиск местоположения пользователя -->
-        <div
-          v-if="geolocation"
-          class="map-actions map-actions--top map-actions--right pa-4 z-index--fix"
-        >
+        <div class="map-actions map-actions--top map-actions--right pa-4 z-index--fix">
           <v-btn
-            small
+            :small="$vuetify.breakpoint.mdAndUp"
             depressed
             @click="getCurrentPosition"
           >
-            <v-icon small>
+            <v-icon :small="$vuetify.breakpoint.mdAndUp">
               mdi-crosshairs-gps
             </v-icon>
           </v-btn>
         </div>
         <!-- Изменение масштаба карты -->
         <div class="map-actions map-actions--top pa-4 z-index--fix">
-          <v-btn-toggle small>
+          <v-btn-toggle>
             <v-btn
-              small
+              :small="$vuetify.breakpoint.mdAndUp"
               depressed
               @click="map.zoomIn()"
             >
-              <v-icon small>
+              <v-icon :small="$vuetify.breakpoint.mdAndUp">
                 mdi-plus
               </v-icon>
             </v-btn>
             <v-btn
-              small
+              :small="$vuetify.breakpoint.mdAndUp"
               depressed
               @click="map.zoomOut()"
             >
-              <v-icon small>
+              <v-icon :small="$vuetify.breakpoint.mdAndUp">
                 mdi-minus
               </v-icon>
             </v-btn>
@@ -220,19 +323,19 @@
         </div>
         <!-- Добавление метки -->
         <div
-          v-if="$auth.loggedIn && interactionMode === INTERACTION_MODE.VIEW"
+          v-if="$auth.loggedIn && interactionMode === INTERACTION_MODE.VIEW_MAP"
           class="map-actions map-actions--bottom pa-4 z-index--fix"
         >
           <!-- Добавление метки -->
           <v-btn
-            small
+            :small="$vuetify.breakpoint.mdAndUp"
             depressed
             class="mr-4"
             @click="addEntry(INTERACTION_MODE.EDIT_PLACEMARK)"
           >
             Добавить метку
             <v-icon
-              small
+              :small="$vuetify.breakpoint.mdAndUp"
               class="ml-2"
             >
               mdi-map-marker-down
@@ -262,17 +365,19 @@ import _ from 'lodash'
 import L from 'leaflet'
 
 import type {
+  Location,
   Placemark,
+  PlacemarksMarkersReferencesMap,
+  Query,
   SnackbarData
 } from '~/types'
 
 import {
+  DELETE_CONFIRMATION_COUNT,
   INTERACTION_MODE,
-  VIEW_MODE,
-  PLACEMARK_TYPE,
-  PLACEMARK_TYPES,
   PLACEMARK_STUB,
-  DELETE_CONFIRMATION_COUNT
+  PLACEMARK_TYPE,
+  PLACEMARK_TYPES
 } from '~/libs/constants'
 
 import {
@@ -300,37 +405,34 @@ export default Vue.extend({
       INTERACTION_MODE,
 
       // Режим взаимодействия
-      interactionMode: INTERACTION_MODE.VIEW,
-
-      // Режимы просмотра
-      VIEW_MODE,
-
-      // Режим просмотра
-      viewMode: undefined as unknown as VIEW_MODE,
+      interactionMode: INTERACTION_MODE.VIEW_MAP,
 
       // Карта
       map: undefined as unknown as L.Map,
 
-      // Координаты центра карты по умолчанию
-      mapCenter: [
+      // Центр карты по умолчанию (дайвинг-клуб Скат)
+      mapDefaultCenter: [
         53.2613934,
         34.395868
       ] as L.LatLngTuple,
 
+      // Предыдущий центр карты
+      mapPreviousCenter: undefined as unknown as L.LatLng,
+
       // Масштаб карты по умолчанию
-      mapZoom: 10 as number,
+      mapDefaultZoom: 10 as number,
 
-      // Масштаб карты при просмотре метки или курса
-      mapEntryZoom: 18 as number,
+      // Предыдущий масштаб карты
+      mapPreviousZoom: undefined as unknown as number,
 
-      // Диалог авторизации
-      authDialog: false as boolean,
+      // Масштаб карты при просмотре метки
+      mapPlacemarkZoom: 15 as number,
 
-      // Панель для просмотра метки или курса
-      entryDrawer: false as boolean,
+      // Масштаб карты при добавлении / редактировании метки
+      mapEditablePlacemarkZoom: 16 as number,
 
-      // Панель для работы с меткой или курсом
-      editableEntryDrawer: false as boolean,
+      // Слой маркеров меток
+      mapPlacemarksLayerGroup: new L.LayerGroup(),
 
       // Типы метки
       PLACEMARK_TYPES,
@@ -341,23 +443,75 @@ export default Vue.extend({
       // Метка
       placemark: undefined as unknown as Placemark,
 
-      // Копия метки (для отмены редактирования)
+      // Копия метки (для сохранения состояния перед редактированием)
       placemarkBackup: undefined as unknown as Placemark,
 
       // Счётчик для подтверждения удаления метки
       placemarkDeleteConfirmationCount: DELETE_CONFIRMATION_COUNT,
 
-      // Маркер метки (для работы)
-      draggablePlacemarkMarker: undefined as unknown as L.Marker,
-
       // Маркер метки
       placemarkMarker: undefined as unknown as L.Marker,
 
-      // Слой маркеров меток
-      placemarksLayerGroup: new L.LayerGroup(),
+      // Ссылки на маркеры по ID метки
+      placemarksMarkersReferences: {} as PlacemarksMarkersReferencesMap,
 
-      // Геолокация доступна?
-      geolocation: false
+      // Редактируемый маркер метки
+      placemarkDraggableMarker: undefined as unknown as L.Marker,
+
+      // Панель метки
+      placemarkBottomSheet: false as boolean,
+
+      // Диалог авторизации
+      authDialog: false as boolean,
+
+      // Строка запроса
+      query: {
+        placemark_id: undefined,
+        map_center: undefined,
+        map_zoom: undefined
+      } as Query
+    }
+  },
+
+  computed: {
+    /**
+     * Ширина панели метки
+     */
+    $placemarkBottomSheetWidthPercents (): number {
+      return this.$vuetify.breakpoint.smAndDown ? 100 : 30
+    },
+
+    /**
+     * Высота панели метки
+     */
+    $placemarkBottomSheetHeightPixels (): number {
+      switch (this.interactionMode) {
+        case INTERACTION_MODE.EDIT_PLACEMARK:
+          return 500
+        default:
+          return 300
+      }
+    }
+  },
+
+  watch: {
+    /**
+     * Метка
+     */
+    placemark (): void {
+      this.query.placemark_id = this.placemark ? this.placemark.id as number : undefined
+    },
+
+    /**
+     * Параметры запроса
+     */
+    query: {
+      deep: true,
+      handler (): void {
+        this.$router.replace({
+          query: this.query
+        })
+      }
     }
   },
 
@@ -378,6 +532,7 @@ export default Vue.extend({
     }
 
     // Карта
+
     this.map = new L
       .Map(
         'map',
@@ -385,7 +540,17 @@ export default Vue.extend({
           zoomControl: false
         }
       )
-      .setView(this.mapCenter, this.mapZoom)
+      .setView(this.mapDefaultCenter, this.mapDefaultZoom)
+
+    this.map.on('zoomend', () => {
+      this.query.map_zoom = this.map.getZoom()
+    })
+
+    this.map.on('moveend', () => {
+      const mapCenter = this.map.getCenter() as L.LatLng
+
+      this.query.map_center = `${mapCenter.lat},${mapCenter.lng}`
+    })
 
     // Слой OSM
 
@@ -394,12 +559,12 @@ export default Vue.extend({
     this.map.addLayer(OSMLayer)
 
     // Слой меток
-    this.map.addLayer(this.placemarksLayerGroup)
+    this.map.addLayer(this.mapPlacemarksLayerGroup)
+
+    // Получение и отрисовка меток
 
     this.$nextTick(async () => {
       this.$nuxt.$loading.start()
-
-      // Получение и отрисовка меток
 
       const placemarks = await request(
         this.$axios,
@@ -408,13 +573,12 @@ export default Vue.extend({
         'placemarks'
       ) as Placemark[]
 
-      placemarks.forEach((placemark: Placemark) => this.drawPlacemark(placemark))
+      placemarks.forEach((placemark: Placemark) => this.drawPlacemarkMarker(placemark))
 
       this.$nuxt.$loading.finish()
-    })
 
-    // Проверка доступности геолокации
-    this.geolocation = !!navigator.geolocation
+      this.processQuery(this.$route.query as Query)
+    })
   },
 
   methods: {
@@ -422,11 +586,11 @@ export default Vue.extend({
      * Добавление метки
      */
     addEntry (interactionMode: INTERACTION_MODE): void {
-      this.interactionMode = INTERACTION_MODE.DRAW
+      this.map.on('click', (event: L.LeafletMouseEvent) => this.getAddEntryHandler(interactionMode, event.latlng))
 
       L.DomUtil.addClass(this.map.getContainer(), 'cursor--crosshair')
 
-      this.map.on('click', (event: L.LeafletMouseEvent) => this.getAddEntryHandler(interactionMode, event.latlng))
+      this.interactionMode = INTERACTION_MODE.DRAW_MAP
     },
 
     /**
@@ -449,43 +613,235 @@ export default Vue.extend({
 
       L.DomUtil.removeClass(this.map.getContainer(), 'cursor--crosshair')
 
-      const placemark = _.cloneDeep(PLACEMARK_STUB)
+      const placemark = _.cloneDeep(PLACEMARK_STUB) as Placemark
 
-      placemark.location.lat = latlng.lat
-
-      placemark.location.lng = latlng.lng
+      placemark.location = latlng as Location
 
       this.placemark = placemark
 
-      this.drawDraggablePlacemark(this.placemark)
+      this.drawDraggablePlacemarkMarker(this.placemark)
 
-      this.map.setView(latlng, this.mapEntryZoom)
+      this.mapPreviousCenter = this.map.getCenter() as L.LatLng
+
+      this.mapPreviousZoom = this.map.getZoom()
+
+      this.setViewWithOffset(placemark.location as L.LatLng, this.mapEditablePlacemarkZoom)
 
       this.interactionMode = interactionMode
 
-      this.editableEntryDrawer = true
+      this.placemarkBottomSheet = true
     },
 
     /**
-     * Отрисовка маркера для работы меткой
+     * Просмотр метки
      */
-    drawDraggablePlacemark (placemark: Placemark): void {
-      this.draggablePlacemarkMarker = new L
-        .Marker(
-          new L.LatLng(
-            placemark.location.lat as number,
-            placemark.location.lng as number
-          ),
-          {
-            icon: this.getPlacemarkIcon(placemark),
-            draggable: true
-          }
-        )
-        .on('move', () => {
-          placemark.location = this.draggablePlacemarkMarker.getLatLng()
-        })
+    async viewPlacemark (id: number, marker: L.Marker): Promise<void> {
+      this.$nuxt.$loading.start()
 
-      this.placemarksLayerGroup.addLayer(this.draggablePlacemarkMarker)
+      this.placemark = await request(
+        this.$axios,
+        'placemark_getPlacemarkById',
+        {
+          id
+        },
+        'placemark'
+      ) as Placemark
+
+      this.$nuxt.$loading.finish()
+
+      this.placemarkMarker = marker
+
+      this.mapPreviousCenter = this.map.getCenter() as L.LatLng
+
+      this.mapPreviousZoom = this.map.getZoom()
+
+      this.setViewWithOffset(this.placemark.location as L.LatLng, this.mapPlacemarkZoom)
+
+      this.interactionMode = INTERACTION_MODE.VIEW_PLACEMARK
+
+      this.placemarkBottomSheet = true
+    },
+
+    /**
+     * Закрытие метки
+     */
+    closePlacemark (deleteMarkers?: boolean): void {
+      if (this.interactionMode === INTERACTION_MODE.EDIT_PLACEMARK) {
+        this.undoEditPlacemark()
+      }
+
+      if (deleteMarkers === true && this.placemarkMarker) {
+        this.mapPlacemarksLayerGroup.removeLayer(this.placemarkMarker)
+
+        delete this.placemarksMarkersReferences[this.placemark.id as number]
+      }
+
+      this.placemarkMarker = undefined as unknown as L.Marker
+
+      if (deleteMarkers === true && this.placemarkDraggableMarker) {
+        this.mapPlacemarksLayerGroup.removeLayer(this.placemarkDraggableMarker)
+      }
+
+      this.placemarkDraggableMarker = undefined as unknown as L.Marker
+
+      this.interactionMode = INTERACTION_MODE.VIEW_MAP
+
+      this.placemarkBottomSheet = false
+
+      this.placemark = undefined as unknown as Placemark
+
+      this.placemarkDeleteConfirmationCount = DELETE_CONFIRMATION_COUNT
+
+      this.map.setView(this.mapPreviousCenter, this.mapPreviousZoom)
+    },
+
+    /**
+     * Редактирование метки
+     */
+    editPlacemark (): void {
+      this.placemarkBackup = _.cloneDeep(this.placemark) as Placemark
+
+      this.mapPlacemarksLayerGroup.removeLayer(this.placemarkMarker)
+
+      delete this.placemarksMarkersReferences[this.placemark.id as number]
+
+      this.drawDraggablePlacemarkMarker(this.placemark)
+
+      this.$nextTick(() => {
+        this.setViewWithOffset(this.placemark.location as L.LatLng, this.mapEditablePlacemarkZoom)
+      })
+
+      this.interactionMode = INTERACTION_MODE.EDIT_PLACEMARK
+    },
+
+    /**
+     * Отмена редактирования метки
+     */
+    undoEditPlacemark (): void {
+      if (this.placemark.id) {
+        // Если отменяем создание новой метки, то восстанавливать копию не нужно
+
+        this.placemark = _.cloneDeep(this.placemarkBackup) as Placemark
+
+        this.placemarkBackup = undefined as unknown as Placemark
+      }
+
+      this.mapPlacemarksLayerGroup.removeLayer(this.placemarkDraggableMarker)
+
+      if (this.placemark.id) {
+        // Если отменяем создание новой метки, то отрисовывать маркер не нужно
+
+        this.placemarkMarker = this.drawPlacemarkMarker(this.placemark)
+      }
+
+      this.$nextTick(() => {
+        if (this.placemark) {
+          // this.placemark может быть undefined если undoEditPlacemark вызывается из closePlacemark (из-за $nextTick)
+
+          this.setViewWithOffset(this.placemark.location as L.LatLng, this.mapPlacemarkZoom)
+        }
+      })
+
+      this.interactionMode = INTERACTION_MODE.VIEW_PLACEMARK
+    },
+
+    /**
+     * Сохранение метки
+     */
+    async savePlacemark (): Promise<void> {
+      this.$nuxt.$loading.start()
+
+      this.placemark = await request(
+        this.$axios,
+        `placemark_${this.placemark.id ? 'updatePlacemarkById' : 'addPlacemark'}`,
+        this.placemark,
+        'placemark'
+      ) as Placemark
+
+      this.$nuxt.$loading.finish()
+
+      this.placemarkBackup = _.cloneDeep(this.placemark) as Placemark
+
+      this.$nuxt.$emit('snackbar:show', {
+        color: 'success',
+        text: 'Готово! 🙂'
+      } as SnackbarData)
+    },
+
+    /**
+     * Удаление метки
+     */
+    async deletePlacemark (): Promise<void> {
+      if (this.placemarkDeleteConfirmationCount !== 0) {
+        this.placemarkDeleteConfirmationCount -= 1
+
+        this.$nuxt.$emit('snackbar:show', {
+          color: 'warning',
+          text: 'Нажмите ещё несколько раз ...'
+        } as SnackbarData)
+
+        return
+      }
+
+      this.$nuxt.$loading.start()
+
+      await request(
+        this.$axios,
+        'placemark_deletePlacemarkById',
+        {
+          id: this.placemark.id
+        },
+        null
+      )
+
+      this.$nuxt.$loading.finish()
+
+      this.closePlacemark(true)
+
+      this.$nuxt.$emit('snackbar:show', {
+        color: 'success',
+        text: 'Готово! 🙂'
+      } as SnackbarData)
+    },
+
+    /**
+     * Фокус на каком-то месте со смещением по высоте / вертикали относительно интерфейса
+     */
+    setViewWithOffset (latlng: L.LatLng, zoom: number): void {
+      const targetViewPoint = this.map
+        .project(latlng, zoom)
+        .subtract([0, this.$placemarkBottomSheetHeightPixels / 2 * -1])
+
+      const targetViewLatLng = this.map.unproject(targetViewPoint, zoom)
+
+      this.map.setView(targetViewLatLng, zoom)
+    },
+
+    /**
+     * Получение местоположения пользователя
+     */
+    getCurrentPosition (): void {
+      this.$nuxt.$emit('snackbar:show', {
+        color: 'info',
+        text: 'Ищем вас ... 🙂'
+      } as SnackbarData)
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.map.setView(new L.LatLng(position.coords.latitude, position.coords.longitude), this.mapDefaultZoom)
+
+          this.$nuxt.$emit('snackbar:show', {
+            color: 'success',
+            text: 'Готово! 🙂'
+          } as SnackbarData)
+        },
+        () => {
+          this.$nuxt.$emit('snackbar:show', {
+            color: 'error',
+            text: 'Не получилось найти вас 😢'
+          } as SnackbarData)
+        }
+      )
     },
 
     /**
@@ -509,187 +865,83 @@ export default Vue.extend({
     },
 
     /**
-     * Обработчик изменения типа метки
+     * Отрисовка редактируемого маркера метки
      */
-    onChangePlacemarkTypeHandler (): void {
-      this.draggablePlacemarkMarker.setIcon(this.getPlacemarkIcon(this.placemark))
+    drawDraggablePlacemarkMarker (placemark: Placemark): void {
+      this.placemarkDraggableMarker = new L
+        .Marker(
+          placemark.location as L.LatLng,
+          {
+            icon: this.getPlacemarkIcon(placemark),
+            draggable: true
+          }
+        )
+        .on('move', () => {
+          placemark.location = this.placemarkDraggableMarker.getLatLng()
+        })
+
+      this.mapPlacemarksLayerGroup.addLayer(this.placemarkDraggableMarker)
     },
 
     /**
-     * Отрисовка метки
+     * Отрисовка маркера метки
      */
-    drawPlacemark (placemark: Placemark): void {
+    drawPlacemarkMarker (placemark: Placemark): L.Marker {
       const marker = new L
         .Marker(
-          new L.LatLng(
-            placemark.location.lat as number,
-            placemark.location.lng as number
-          ),
+          placemark.location as L.LatLng,
           {
             icon: this.getPlacemarkIcon(placemark)
           }
         )
         .bindTooltip(placemark.title)
         .on('click', () => {
-          this.placemarkMarker = marker
-
-          this.viewPlacemark(placemark.id as number)
+          this.viewPlacemark(placemark.id as number, marker)
         })
 
-      this.placemarksLayerGroup.addLayer(marker)
+      this.placemarksMarkersReferences[placemark.id as number] = marker.addTo(this.mapPlacemarksLayerGroup)
+
+      return marker
     },
 
     /**
-     * Сохранение метки
+     * Обработчик изменения типа метки
      */
-    async savePlacemark (): Promise<void> {
-      this.$nuxt.$loading.start()
-
-      this.placemark = await request(
-        this.$axios,
-        `placemark_${this.placemark.id ? 'updatePlacemarkById' : 'addPlacemark'}`,
-        this.placemark,
-        'placemark'
-      ) as Placemark
-
-      this.placemarkBackup = _.cloneDeep(this.placemark)
-
-      this.$nuxt.$loading.finish()
-
-      this.$nuxt.$emit('snackbar:show', {
-        color: 'success',
-        text: 'Готово! 🙂'
-      } as SnackbarData)
+    onChangePlacemarkTypeHandler (): void {
+      this.placemarkDraggableMarker.setIcon(this.getPlacemarkIcon(this.placemark))
     },
 
     /**
-     * Просмотр метки
+     * Обработка параметров запроса
      */
-    async viewPlacemark (id: number): Promise<void> {
-      this.$nuxt.$loading.start()
-
-      this.placemark = await request(
-        this.$axios,
-        'placemark_getPlacemarkById',
-        {
-          id
-        },
-        'placemark'
-      ) as Placemark
-
-      this.placemarkDeleteConfirmationCount = DELETE_CONFIRMATION_COUNT
-
-      this.viewMode = VIEW_MODE.PLACEMARK
-
-      this.entryDrawer = true
-
-      this.$nuxt.$loading.finish()
-    },
-
-    /**
-     * Редактирование метки
-     */
-    editPlacemark (): void {
-      this.$nuxt.$loading.start()
-
-      this.interactionMode = INTERACTION_MODE.EDIT_PLACEMARK
-
-      this.editableEntryDrawer = true
-
-      this.placemarksLayerGroup.removeLayer(this.placemarkMarker)
-
-      this.drawDraggablePlacemark(this.placemark)
-
-      this.map.setView(this.placemark.location as L.LatLng, this.mapEntryZoom)
-
-      this.placemarkBackup = _.cloneDeep(this.placemark)
-
-      this.$nuxt.$loading.finish()
-    },
-
-    /**
-     * Отмена редактирования метки
-     */
-    undoEditPlacemark (): void {
-      this.$nuxt.$loading.start()
-
-      this.interactionMode = INTERACTION_MODE.VIEW
-
-      this.editableEntryDrawer = false
-
-      this.placemarksLayerGroup.removeLayer(this.draggablePlacemarkMarker)
-
-      this.drawPlacemark(this.placemark)
-
-      this.placemark = _.cloneDeep(this.placemarkBackup)
-
-      this.$nuxt.$loading.finish()
-    },
-
-    /**
-     * Удаление метки
-     */
-    async deletePlacemark (): Promise<void> {
-      if (this.placemarkDeleteConfirmationCount !== 0) {
-        this.placemarkDeleteConfirmationCount -= 1
+    processQuery (query: Query): void {
+      if (query.placemark_id) {
+        this.placemarksMarkersReferences[this.$route.query.placemark_id as number].fire('click')
 
         return
       }
 
-      this.$nuxt.$loading.start()
+      if (query.map_center) {
+        const mapCenter = query.map_center.split(',')
 
-      await request(
-        this.$axios,
-        'placemark_deletePlacemarkById',
-        {
-          id: this.placemark.id
-        },
-        null
-      )
+        if (mapCenter.length === 2) {
+          const mapZoom = query.map_zoom || this.mapDefaultZoom
 
-      this.interactionMode = INTERACTION_MODE.VIEW
-
-      this.entryDrawer = false
-
-      this.editableEntryDrawer = false
-
-      this.placemarksLayerGroup.removeLayer(this.placemarkMarker)
-
-      this.placemarksLayerGroup.removeLayer(this.draggablePlacemarkMarker)
-
-      this.map.setView(this.placemark.location as L.LatLng, this.mapEntryZoom)
-
-      this.$nuxt.$loading.finish()
-
-      this.$nuxt.$emit('snackbar:show', {
-        color: 'success',
-        text: 'Готово! 🙂'
-      } as SnackbarData)
-    },
-
-    getCurrentPosition (): void {
-      this.$nuxt.$emit('snackbar:show', {
-        color: 'info',
-        text: 'Ищем вас ... 🙂'
-      } as SnackbarData)
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          this.map.setView(new L.LatLng(position.coords.latitude, position.coords.longitude), this.mapZoom)
-        },
-        () => {
-          this.$nuxt.$emit('snackbar:show', {
-            color: 'error',
-            text: 'Не получилось найти вас 😢'
-          } as SnackbarData)
+          this.map.setView(
+            new L.LatLng(
+              mapCenter[0] as unknown as number,
+              mapCenter[1] as unknown as number
+            ),
+            mapZoom
+          )
         }
-      )
+      }
     }
   },
 
   head () {
     return {
-      title: 'diving-map.io'
+      title: 'diving.place'
     }
   }
 })

@@ -1,9 +1,11 @@
 <template>
   <v-snackbar
     v-model="snackbarShow"
+    app
     :timeout="5000"
     :top="true"
     :color="snackbarData.color"
+    class="z-index--fix"
   >
     {{ snackbarData.text }}
     <template v-slot:action="{ attrs }">
