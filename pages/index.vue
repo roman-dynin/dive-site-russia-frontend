@@ -487,7 +487,7 @@ export default Vue.extend({
     $placemarkBottomSheetHeightPixels (): number {
       switch (this.interactionMode) {
         case INTERACTION_MODE.EDIT_PLACEMARK:
-          return 500
+          return 350
         default:
           return 300
       }
@@ -636,6 +636,14 @@ export default Vue.extend({
      * Просмотр метки
      */
     async viewPlacemark (id: number, marker: L.Marker): Promise<void> {
+      if (!this.placemark) {
+        // Если уже открыта какая-то метка, то центр и масштаб карты сохранять не нужно
+
+        this.mapPreviousCenter = this.map.getCenter() as L.LatLng
+
+        this.mapPreviousZoom = this.map.getZoom()
+      }
+
       this.$nuxt.$loading.start()
 
       this.placemark = await request(
@@ -650,14 +658,6 @@ export default Vue.extend({
       this.$nuxt.$loading.finish()
 
       this.placemarkMarker = marker
-
-      if (!this.placemark) {
-        // Если уже открыта какая-то метка, то центр и масштаб карты сохранять не нужно
-
-        this.mapPreviousCenter = this.map.getCenter() as L.LatLng
-
-        this.mapPreviousZoom = this.map.getZoom()
-      }
 
       this.setViewWithOffset(this.placemark.location as L.LatLng, this.mapPlacemarkZoom)
 
