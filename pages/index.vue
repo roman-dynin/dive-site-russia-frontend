@@ -249,14 +249,14 @@
       <v-spacer />
       <v-btn
         v-if="$auth.loggedIn"
-        :small="$vuetify.breakpoint.mdAndUp"
+        small
         light
         depressed
         @click="$auth.logout()"
       >
         Выход
         <v-icon
-          :small="$vuetify.breakpoint.mdAndUp"
+          small
           class="ml-2"
         >
           mdi-logout-variant
@@ -264,14 +264,14 @@
       </v-btn>
       <v-btn
         v-else
-        :small="$vuetify.breakpoint.mdAndUp"
+        small
         light
         depressed
         @click="authDialog = true"
       >
         Вход
         <v-icon
-          :small="$vuetify.breakpoint.mdAndUp"
+          small
           class="ml-2"
         >
           mdi-login-variant
@@ -300,26 +300,24 @@
         </div>
         <!-- Изменение масштаба карты -->
         <div class="map-actions map-actions--top pa-4 z-index--fix">
-          <v-btn-toggle>
-            <v-btn
-              :small="$vuetify.breakpoint.mdAndUp"
-              depressed
-              @click="map.zoomIn()"
-            >
-              <v-icon :small="$vuetify.breakpoint.mdAndUp">
-                mdi-plus
-              </v-icon>
-            </v-btn>
-            <v-btn
-              :small="$vuetify.breakpoint.mdAndUp"
-              depressed
-              @click="map.zoomOut()"
-            >
-              <v-icon :small="$vuetify.breakpoint.mdAndUp">
-                mdi-minus
-              </v-icon>
-            </v-btn>
-          </v-btn-toggle>
+          <v-btn
+            :small="$vuetify.breakpoint.mdAndUp"
+            depressed
+            @click="map.zoomIn()"
+          >
+            <v-icon :small="$vuetify.breakpoint.mdAndUp">
+              mdi-plus
+            </v-icon>
+          </v-btn>
+          <v-btn
+            :small="$vuetify.breakpoint.mdAndUp"
+            depressed
+            @click="map.zoomOut()"
+          >
+            <v-icon :small="$vuetify.breakpoint.mdAndUp">
+              mdi-minus
+            </v-icon>
+          </v-btn>
         </div>
         <!-- Добавление метки -->
         <div
