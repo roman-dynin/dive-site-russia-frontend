@@ -288,66 +288,65 @@
     </v-app-bar>
     <!-- Основное содержимое -->
     <v-main>
-      <div class="map-wrapper fill-height">
-        <!-- Карта -->
-        <div
-          id="map"
-          class="fill-height"
-        />
-        <!-- Поиск местоположения пользователя -->
-        <div class="map-actions map-actions--top map-actions--right pa-4 z-index--fix">
-          <v-btn
-            :small="$vuetify.breakpoint.mdAndUp"
-            depressed
-            @click="getCurrentPosition"
-          >
-            <v-icon :small="$vuetify.breakpoint.mdAndUp">
-              mdi-crosshairs-gps
-            </v-icon>
-          </v-btn>
-        </div>
-        <!-- Изменение масштаба карты -->
-        <div class="map-actions map-actions--top pa-4 z-index--fix">
-          <v-btn
-            :small="$vuetify.breakpoint.mdAndUp"
-            depressed
-            @click="map.zoomIn()"
-          >
-            <v-icon :small="$vuetify.breakpoint.mdAndUp">
-              mdi-plus
-            </v-icon>
-          </v-btn>
-          <v-btn
-            :small="$vuetify.breakpoint.mdAndUp"
-            depressed
-            @click="map.zoomOut()"
-          >
-            <v-icon :small="$vuetify.breakpoint.mdAndUp">
-              mdi-minus
-            </v-icon>
-          </v-btn>
-        </div>
-        <!-- Добавление метки -->
-        <div
-          v-if="$auth.loggedIn && interactionMode === INTERACTION_MODE.VIEW_MAP"
-          class="map-actions map-actions--bottom pa-4 z-index--fix"
+
+      <!-- Карта -->
+      <div
+        id="map"
+        class="fill-height"
+      />
+      <!-- Поиск местоположения пользователя -->
+      <div class="map-actions map-actions--top map-actions--right pa-4 z-index--fix">
+        <v-btn
+          :small="$vuetify.breakpoint.mdAndUp"
+          depressed
+          @click="getCurrentPosition"
         >
-          <!-- Добавление метки -->
-          <v-btn
+          <v-icon :small="$vuetify.breakpoint.mdAndUp">
+            mdi-crosshairs-gps
+          </v-icon>
+        </v-btn>
+      </div>
+      <!-- Изменение масштаба карты -->
+      <div class="map-actions map-actions--top pa-4 z-index--fix">
+        <v-btn
+          :small="$vuetify.breakpoint.mdAndUp"
+          depressed
+          @click="map.zoomIn()"
+        >
+          <v-icon :small="$vuetify.breakpoint.mdAndUp">
+            mdi-plus
+          </v-icon>
+        </v-btn>
+        <v-btn
+          :small="$vuetify.breakpoint.mdAndUp"
+          depressed
+          @click="map.zoomOut()"
+        >
+          <v-icon :small="$vuetify.breakpoint.mdAndUp">
+            mdi-minus
+          </v-icon>
+        </v-btn>
+      </div>
+      <!-- Добавление метки -->
+      <div
+        v-if="$auth.loggedIn && interactionMode === INTERACTION_MODE.VIEW_MAP"
+        class="map-actions map-actions--bottom pa-4 z-index--fix"
+      >
+        <!-- Добавление метки -->
+        <v-btn
+          :small="$vuetify.breakpoint.mdAndUp"
+          depressed
+          class="mr-4"
+          @click="addEntry(INTERACTION_MODE.EDIT_PLACEMARK)"
+        >
+          Добавить метку
+          <v-icon
             :small="$vuetify.breakpoint.mdAndUp"
-            depressed
-            class="mr-4"
-            @click="addEntry(INTERACTION_MODE.EDIT_PLACEMARK)"
+            class="ml-2"
           >
-            Добавить метку
-            <v-icon
-              :small="$vuetify.breakpoint.mdAndUp"
-              class="ml-2"
-            >
-              mdi-map-marker-down
-            </v-icon>
-          </v-btn>
-        </div>
+            mdi-map-marker-down
+          </v-icon>
+        </v-btn>
       </div>
     </v-main>
     <!-- Подвал -->
@@ -989,11 +988,6 @@ export default Vue.extend({
 .cursor--crosshair
 {
   cursor: crosshair !important;
-}
-
-.map-wrapper
-{
-  position: relative;
 }
 
 .map-actions
