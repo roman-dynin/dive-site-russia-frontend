@@ -377,7 +377,7 @@ import type {
   PlacemarksMarkersReferencesMap,
   Query,
   SnackbarData
-} from '~/types'
+} from '../types'
 
 import {
   DELETE_CONFIRMATION_COUNT,
@@ -385,11 +385,11 @@ import {
   PLACEMARK_STUB,
   PLACEMARK_TYPE,
   PLACEMARK_TYPES
-} from '~/libs/constants'
+} from '../libs/constants'
 
 import {
   request
-} from '~/libs/jsonrpc'
+} from '../libs/jsonrpc'
 
 import {
   placemarkDiveClub,
@@ -397,9 +397,9 @@ import {
   placemarkMisc,
   placemarkShore,
   placemarkSubmergedObject
-} from '~/libs/icons'
+} from '../libs/icons'
 
-import Snackbar from '~/components/Snackbar.vue'
+import Snackbar from '../components/Snackbar.vue'
 
 export default Vue.extend({
   components: {
