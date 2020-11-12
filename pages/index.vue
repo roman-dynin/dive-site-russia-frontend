@@ -247,6 +247,7 @@
     <!-- Шапка -->
     <v-app-bar
       app
+      dense
       flat
       dark
     >
@@ -352,7 +353,7 @@
     <v-footer
       app
       dark
-      class="z-index--fix"
+      class="caption z-index--fix"
     >
       Made with ❤️ by Roman Dynin
     </v-footer>
@@ -370,7 +371,13 @@ import L from 'leaflet'
 
 import 'leaflet.markercluster'
 
-import type {Location, Placemark, PlacemarksMarkersReferencesMap, Query, SnackbarData} from '~/types'
+import type {
+  Location,
+  Placemark,
+  PlacemarksMarkersReferencesMap,
+  Query,
+  SnackbarData
+} from '~/types'
 
 import {
   DELETE_CONFIRMATION_COUNT,
@@ -380,7 +387,9 @@ import {
   PLACEMARK_TYPES
 } from '~/libs/constants'
 
-import {request} from '~/libs/jsonrpc'
+import {
+  request
+} from '~/libs/jsonrpc'
 
 import {
   placemarkDiveClub,
