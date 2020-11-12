@@ -311,19 +311,19 @@
         <v-btn
           :small="$vuetify.breakpoint.mdAndUp"
           depressed
-          @click="map.zoomIn()"
+          @click="map.zoomOut()"
         >
           <v-icon :small="$vuetify.breakpoint.mdAndUp">
-            mdi-plus
+            mdi-minus
           </v-icon>
         </v-btn>
         <v-btn
           :small="$vuetify.breakpoint.mdAndUp"
           depressed
-          @click="map.zoomOut()"
+          @click="map.zoomIn()"
         >
           <v-icon :small="$vuetify.breakpoint.mdAndUp">
-            mdi-minus
+            mdi-plus
           </v-icon>
         </v-btn>
       </div>
