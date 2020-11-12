@@ -561,7 +561,9 @@ export default Vue.extend({
       .Map(
         'map',
         {
-          zoomControl: false
+          maxZoom: 18,
+          zoomControl: false,
+          crs: L.CRS.EPSG3395
         }
       )
       .setView(this.mapDefaultCenter, this.mapDefaultZoom)
@@ -584,6 +586,7 @@ export default Vue.extend({
 
     // Слой Google (Гибридный)
 
+    /*
     const GoogleHybridLayer = new L.TileLayer(
       'http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}',
       {
@@ -598,6 +601,38 @@ export default Vue.extend({
     )
 
     this.map.addLayer(GoogleHybridLayer)
+    */
+
+    // Слой Яндекс (Спутник + Карта)
+
+    const YandexMapsSateliteLayer = new L.TileLayer(
+      'http://sat{s}.maps.yandex.net/tiles?l=sat&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',
+      {
+        subdomains: [
+          '01',
+          '02',
+          '03',
+          '04'
+        ],
+        attribution: '<a http="http://yandex.ru" target="_blank"><span style="color: red;">Я</span>ндекс</a>'
+      }
+    )
+
+    this.map.addLayer(YandexMapsSateliteLayer)
+
+    const YandexMapsMapLayer = new L.TileLayer(
+      'http://vec{s}.maps.yandex.net/tiles?l=skl&x={x}&y={y}&z={z}&scale=1&lang=ru_RU',
+      {
+        subdomains: [
+          '01',
+          '02',
+          '03',
+          '04'
+        ]
+      }
+    )
+
+    this.map.addLayer(YandexMapsMapLayer)
 
     // Слой меток
     this.map.addLayer(this.mapPlacemarksLayerGroup)
