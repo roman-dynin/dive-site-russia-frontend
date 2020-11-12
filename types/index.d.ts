@@ -52,3 +52,11 @@ export interface SnackbarData {
   color: string,
   text: string
 }
+
+/**
+ * Событие касания
+ */
+export interface TouchEvent {
+  touchstartY: number,
+  touchendY: number
+}

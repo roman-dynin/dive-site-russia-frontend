@@ -45,7 +45,12 @@
         flat
         tile
       >
-        <v-card-title class="pa-4">
+        <v-card-title
+          v-touch="{
+            down: onPlacemarkBottomSheetTouch
+          }"
+          class="pa-4"
+        >
           <v-row
             justify="space-between"
             no-gutters
@@ -376,7 +381,8 @@ import type {
   Placemark,
   PlacemarksMarkersReferencesMap,
   Query,
-  SnackbarData
+  SnackbarData,
+  TouchEvent
 } from '../types'
 
 import {
@@ -1033,6 +1039,17 @@ export default Vue.extend({
             mapZoom
           )
         }
+      }
+    },
+
+    /**
+     * Свайп панели метки
+     */
+    onPlacemarkBottomSheetTouch (event: TouchEvent): void {
+      const offset = this.$placemarkBottomSheetHeightPixels * 0.75
+
+      if (event.touchendY - event.touchstartY > offset) {
+        this.closePlacemark()
       }
     }
   },
